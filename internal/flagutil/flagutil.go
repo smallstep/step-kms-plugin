@@ -68,6 +68,20 @@ func UpperValue(name string, allowed []string, defaultValue string) pflag.Value 
 	}
 }
 
+// LowerValue returns a pflag.Value interface with that will only accept
+// values from a given list, but before checking the allowed list it will
+// normalized values to lower-case.
+func LowerValue(name string, allowed []string, defaultValue string) pflag.Value {
+	return &value{
+		Name:    name,
+		Allowed: allowed,
+		Value:   defaultValue,
+		Normalize: func(s string) string {
+			return strings.ToLower(s)
+		},
+	}
+}
+
 // NormalizedValue returns a pflag.Value interface with that will only accept
 // values from a given list, but before checking the allowed list it will
 // normalized values to upper-case and remove any dash or hyphens.
