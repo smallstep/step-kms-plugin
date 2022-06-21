@@ -22,12 +22,12 @@ import (
 var createCmd = &cobra.Command{
 	Use:   "create <uri>",
 	Short: "generates a key in the KMS",
-	Long: `TODO: A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Example: `  # Create an EC P-256 private key in a PKCS #11 module:
+  step-kms-plugin create "pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm;id=1000?pin-value=pass"
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+  # Create an RSA key:
+  step-kms-plugin create --kty RSA --size 4096 "pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm;id=1000?pin-value=pass"`,
+
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showUsageErr(cmd)
@@ -59,8 +59,7 @@ to quickly create a Cobra application.`,
 
 		cmd.SilenceUsage = true
 		km, err := kms.New(context.Background(), apiv1.Options{
-			Type: string(apiv1.PKCS11),
-			URI:  kuri,
+			URI: kuri,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to load key manager: %w", err)

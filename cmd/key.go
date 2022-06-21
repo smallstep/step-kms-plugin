@@ -33,8 +33,7 @@ var keyCmd = &cobra.Command{
   step-kms-plugin key -kms "pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass" "pkcs11:id=1000"
 
   # Get the public key using the PKCS #11 label:
-  step-kms-plugin key -kms "pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass" "pkcs11:object=my-key"
-`,
+  step-kms-plugin key -kms "pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass" "pkcs11:object=my-key"`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showUsageErr(cmd)
