@@ -45,5 +45,6 @@ var usageErr = errors.New("usage")
 
 func showUsageErr(cmd *cobra.Command) error {
 	cmd.SilenceErrors = true
+	cmd.SilenceUsage = false
 	return usageErr
 }
