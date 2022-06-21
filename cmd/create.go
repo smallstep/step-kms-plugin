@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -31,12 +30,10 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			cmd.SilenceErrors = true
-			return errors.New("usage")
+			return showUsageErr(cmd)
 		}
 
 		flags := cmd.Flags()
-
 		kty := flagutil.MustString(flags, "kty")
 		crv := flagutil.MustString(flags, "crv")
 		size := flagutil.MustInt(flags, "size")

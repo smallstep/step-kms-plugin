@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -38,4 +39,11 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
+}
+
+var usageErr = errors.New("usage")
+
+func showUsageErr(cmd *cobra.Command) error {
+	cmd.SilenceErrors = true
+	return usageErr
 }
