@@ -16,11 +16,17 @@ package cmd
 import (
 	"context"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
+	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
+	"os"
 
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
@@ -32,16 +38,19 @@ var signCmd = &cobra.Command{
 	Short: "sign the given digest using the kms",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 2 {
-			cmd.SilenceErrors = true
-			return errors.New("usage")
+			return showUsageErr(cmd)
 		}
 
-		kuri, _ := cmd.Flags().GetString("kms")
+		flags := cmd.Flags()
+		alg := flagutil.MustString(flags, "alg")
+		pss := flagutil.MustBool(flags, "pss")
+		format := flagutil.MustString(flags, "format")
+
+		kuri, _ := flags.GetString("kms")
 		if kuri == "" {
 			kuri = args[0]
 		}
 
-		cmd.SilenceUsage = true
 		km, err := kms.New(context.Background(), apiv1.Options{
 			URI: kuri,
 		})
@@ -62,17 +71,80 @@ var signCmd = &cobra.Command{
 			return fmt.Errorf("failed to create signer: %w", err)
 		}
 
-		sig, err := signer.Sign(rand.Reader, digest, crypto.SHA256)
+		so, err := getSignerOptions(signer.Public(), alg, pss)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(hex.EncodeToString(sig))
+		sig, err := signer.Sign(rand.Reader, digest, so)
+		if err != nil {
+			return err
+		}
+
+		switch format {
+		case "hex":
+			fmt.Println(hex.EncodeToString(sig))
+		case "raw":
+			os.Stdout.Write(sig)
+		default:
+			fmt.Println(base64.StdEncoding.EncodeToString(sig))
+		}
+
 		return nil
 	},
 }
 
+func getSignerOptions(pub crypto.PublicKey, alg string, pss bool) (crypto.SignerOpts, error) {
+	switch k := pub.(type) {
+	case *ecdsa.PublicKey:
+		switch k.Curve {
+		case elliptic.P256():
+			return crypto.SHA256, nil
+		case elliptic.P384():
+			return crypto.SHA384, nil
+		case elliptic.P521():
+			return crypto.SHA512, nil
+		default:
+			return nil, fmt.Errorf("unsupported elliptic curve %q", k.Curve.Params().Name)
+		}
+	case *rsa.PublicKey:
+		var h crypto.Hash
+		switch alg {
+		case "", "SHA256":
+			h = crypto.SHA256
+		case "SHA384":
+			h = crypto.SHA384
+		case "SHA512":
+			h = crypto.SHA512
+		default:
+			return nil, fmt.Errorf("unsupported hashing algorithm %q", alg)
+		}
+		if pss {
+			return &rsa.PSSOptions{
+				Hash:       h,
+				SaltLength: rsa.PSSSaltLengthAuto,
+			}, nil
+		}
+		return h, nil
+	case ed25519.PublicKey:
+		return crypto.Hash(0), nil
+	default:
+		return nil, fmt.Errorf("unsupported public key type %T", pub)
+	}
+}
+
 func init() {
 	rootCmd.AddCommand(signCmd)
-	signCmd.Flags().String("kms", "", "Uri with the kms configuration to use")
+	signCmd.SilenceUsage = true
+
+	flags := signCmd.Flags()
+	flags.SortFlags = false
+
+	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
+	format := flagutil.LowerValue("format", []string{"base64", "hex", "raw"}, "base64")
+
+	flags.String("kms", "", "Uri with the kms configuration to use")
+	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
+	flags.Bool("pss", false, "Use RSA-PSS signature scheme instead of RSA PKCS #1")
+	flags.Var(format, "format", "The `format` to print the signature.\nOptions are base64, hex, or raw")
 }
