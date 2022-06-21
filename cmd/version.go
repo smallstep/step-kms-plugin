@@ -15,7 +15,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -38,8 +40,13 @@ var versionCmd = &cobra.Command{
 			ReleaseDate = time.Now().UTC().Format("2006-01-02 15:04 MST")
 		}
 
-		fmt.Printf("%s/%s (%s/%s)\n", cmd.Parent().Name(), Version, runtime.GOOS, runtime.GOARCH)
-		fmt.Printf("Release Date: %s\n", ReleaseDate)
+		if strings.Contains(os.Getenv("LANG"), "UTF-8") {
+			fmt.Printf("🔐 %s/%s (%s/%s)\n", cmd.Parent().Name(), Version, runtime.GOOS, runtime.GOARCH)
+			fmt.Printf("   Release Date: %s\n", ReleaseDate)
+		} else {
+			fmt.Printf("%s/%s (%s/%s)\n", cmd.Parent().Name(), Version, runtime.GOOS, runtime.GOARCH)
+			fmt.Printf("Release Date: %s\n", ReleaseDate)
+		}
 	},
 }
 
