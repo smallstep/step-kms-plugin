@@ -63,7 +63,11 @@ func init() {
 	var path string
 	switch runtime.GOOS {
 	case "darwin":
-		path = "/usr/local/lib/softhsm/libsofthsm2.so"
+		if runtime.GOARCH == "arm64" {
+			path = "/opt/homebrew/lib/softhsm/libsofthsm2.so"
+		} else {
+			path = "/usr/local/lib/softhsm/libsofthsm2.so"
+		}
 	case "linux":
 		path = "/usr/lib/softhsm/libsofthsm2.so"
 	}
