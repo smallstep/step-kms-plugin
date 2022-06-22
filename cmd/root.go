@@ -72,11 +72,11 @@ func init() {
 		path = "/usr/lib/softhsm/libsofthsm2.so"
 	}
 
+	var kms string
 	if path != "" {
 		if _, err := os.Stat(path); err == nil {
-			kms := fmt.Sprintf("pkcs11:module-path=%s;token=smallstep?pin-value=password", path)
-			flags.String("kms", kms, "The `uri` with the kms configuration to use")
-			return
+			kms = fmt.Sprintf("pkcs11:module-path=%s;token=smallstep?pin-value=password", path)
 		}
 	}
+	flags.String("kms", kms, "The `uri` with the kms configuration to use")
 }
