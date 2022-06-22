@@ -15,7 +15,9 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/spf13/cobra"
 )
@@ -24,12 +26,18 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "step-kms-plugin",
 	Short: "step plugin to manage KMSs",
-	Long: `TODO: A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Long: `TODO ....
+	
+On macOS and Linux, step-kms-plugin automatically configures the kms to use
+softhsm2 with the token smallstep.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+To initialize the token run:
+  softhsm2-util --init-token --free --token smallstep --label smallstep \
+  --so-pin password --pin password
+
+To delete it run:
+  softhsm2-util --delete-token --token smallstep
+`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -47,4 +55,24 @@ func showUsageErr(cmd *cobra.Command) error {
 	cmd.SilenceErrors = true
 	cmd.SilenceUsage = false
 	return usageErr
+}
+
+func init() {
+	flags := rootCmd.PersistentFlags()
+
+	var path string
+	switch runtime.GOOS {
+	case "darwin":
+		path = "/usr/local/lib/softhsm/libsofthsm2.so"
+	case "linux":
+		path = "/usr/lib/softhsm/libsofthsm2.so"
+	}
+
+	if path != "" {
+		if _, err := os.Stat(path); err == nil {
+			kms := fmt.Sprintf("pkcs11:module-path=%s;token=smallstep?pin-value=password", path)
+			flags.String("kms", kms, "The `uri` with the kms configuration to use")
+			return
+		}
+	}
 }

@@ -1,7 +1,16 @@
-/*
-Copyright © 2022 Smallstep Labs, Inc.
-
-*/
+// Copyright 2022 Smallstep Labs, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package cmd
 
 import (
@@ -34,17 +43,26 @@ var createCmd = &cobra.Command{
 		}
 
 		flags := cmd.Flags()
+
 		kty := flagutil.MustString(flags, "kty")
 		crv := flagutil.MustString(flags, "crv")
 		size := flagutil.MustInt(flags, "size")
-		hash := flagutil.MustString(flags, "hash")
+		alg := flagutil.MustString(flags, "alg")
 		pss := flagutil.MustBool(flags, "pss")
 		extractable := flagutil.MustBool(flags, "extractable")
 		pl := flagutil.MustString(flags, "protection-level")
 
-		signatureAlgorithm := getSignatureAlgorithm(kty, crv, hash, pss)
+		if kty != "RSA" {
+			size = 0
+		}
+		// Do not set crv unless the flag is explicitly set by the user
+		if kty != "EC" && !flags.Changed("crv") {
+			crv = ""
+		}
+
+		signatureAlgorithm := getSignatureAlgorithm(kty, crv, alg, pss)
 		if signatureAlgorithm == apiv1.UnspecifiedSignAlgorithm {
-			return fmt.Errorf("failed to get a signature algorithm with kty: %q, crv: %q, hash: %q", kty, crv, hash)
+			return fmt.Errorf("failed to get a signature algorithm with kty: %q, crv: %q, hash: %q", kty, crv, alg)
 		}
 
 		protectionLevel := getProtectionLevel(pl)
@@ -99,8 +117,8 @@ var createCmd = &cobra.Command{
 }
 
 type rsaParams struct {
-	hash string
-	pss  bool
+	alg string
+	pss bool
 }
 
 var rsaSignatureAlgorithmMapping = map[rsaParams]apiv1.SignatureAlgorithm{
@@ -133,12 +151,12 @@ var okpSignatureAlgorithmMapping = map[okpParams]apiv1.SignatureAlgorithm{
 	{"ED25519"}: apiv1.PureEd25519,
 }
 
-func getSignatureAlgorithm(kty, crv, hash string, pss bool) apiv1.SignatureAlgorithm {
+func getSignatureAlgorithm(kty, crv, alg string, pss bool) apiv1.SignatureAlgorithm {
 	switch strings.ToUpper(kty) {
 	case "EC":
 		return ecSignatureAlgorithmMapping[ecParams{crv}]
 	case "RSA":
-		return rsaSignatureAlgorithmMapping[rsaParams{hash, pss}]
+		return rsaSignatureAlgorithmMapping[rsaParams{alg, pss}]
 	case "OKP":
 		return okpSignatureAlgorithmMapping[okpParams{crv}]
 	default:
@@ -159,20 +177,20 @@ func getProtectionLevel(pl string) apiv1.ProtectionLevel {
 
 func init() {
 	rootCmd.AddCommand(createCmd)
+	createCmd.SilenceUsage = true
 
 	flags := createCmd.Flags()
 	flags.SortFlags = false
 
 	kty := flagutil.UpperValue("kty", []string{"EC", "RSA", "OKP"}, "EC")
 	crv := flagutil.NormalizedValue("crv", []string{"P256", "P384", "P521", "Ed25519"}, "P256")
-	hash := flagutil.NormalizedValue("hash", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
+	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
 	protectionLevel := flagutil.UpperValue("protection-level", []string{"SOFTWARE", "HSM"}, "SOFTWARE")
 
-	flags.String("kms", "", "The `uri` with the kms configuration to use")
 	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC, RSA or OKP")
 	flags.Var(crv, "crv", "The elliptic `curve` to use for EC and OKP key types.\nOptions are P256, P384, P521 or Ed25519 on OKP")
 	flags.Int("size", 3072, "The key size for an RSA key")
-	flags.Var(hash, "hash", "The hashing `algorithm` used in the signature.\nOptions are SHA256, SHA384 or SHA512")
+	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
 	flags.Var(protectionLevel, "protection-level", "The protection `level` used on some Cloud KMSs.\nOptions are SOFTWARE or HSM")
 	flags.Bool("pss", false, "Use RSA-PSS signature scheme instead of PKCS #1")
 	flags.Bool("extractable", false, "Mark the new key as extractable")

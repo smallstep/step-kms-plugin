@@ -62,6 +62,4 @@ var keyCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(keyCmd)
 	keyCmd.SilenceUsage = true
-
-	keyCmd.Flags().String("kms", "", "Uri with the kms configuration to use")
 }

@@ -54,6 +54,4 @@ var certificateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(certificateCmd)
 	certificateCmd.SilenceUsage = true
-
-	certificateCmd.Flags().String("kms", "", "Uri with the kms configuration to use")
 }
