@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/fs"
 
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 )
@@ -39,7 +40,8 @@ var keyCmd = &cobra.Command{
 			return showUsageErr(cmd)
 		}
 
-		kuri, _ := cmd.Flags().GetString("kms")
+		flags := cmd.Flags()
+		kuri := flagutil.MustString(flags, "kms")
 		if kuri == "" {
 			kuri = args[0]
 		}

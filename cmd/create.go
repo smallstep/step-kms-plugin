@@ -70,7 +70,7 @@ var createCmd = &cobra.Command{
 			return fmt.Errorf("unsupported protection level: %q", pl)
 		}
 
-		kuri, _ := cmd.Flags().GetString("kms")
+		kuri := flagutil.MustString(flags, "kms")
 		if kuri == "" {
 			kuri = args[0]
 		}

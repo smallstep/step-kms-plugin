@@ -47,7 +47,7 @@ var signCmd = &cobra.Command{
 		pss := flagutil.MustBool(flags, "pss")
 		format := flagutil.MustString(flags, "format")
 
-		kuri, _ := flags.GetString("kms")
+		kuri := flagutil.MustString(flags, "kms")
 		if kuri == "" {
 			kuri = args[0]
 		}
