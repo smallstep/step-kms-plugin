@@ -24,6 +24,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/smallstep/step-kms-plugin/internal/flagutil"
@@ -34,10 +35,10 @@ import (
 
 // signCmd represents the sign command
 var signCmd = &cobra.Command{
-	Use:   "sign <uri> <digest>",
+	Use:   "sign <uri> [<digest>]",
 	Short: "sign the given digest using the kms",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 2 {
+		if l := len(args); l != 1 && l != 2 {
 			return showUsageErr(cmd)
 		}
 
@@ -59,9 +60,17 @@ var signCmd = &cobra.Command{
 		}
 		defer km.Close()
 
-		digest, err := hex.DecodeString(args[1])
-		if err != nil {
-			return err
+		var digest []byte
+		if len(args) == 2 {
+			digest, err = hex.DecodeString(args[1])
+			if err != nil {
+				return err
+			}
+		} else {
+			digest, err = ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				return err
+			}
 		}
 
 		signer, err := km.CreateSigner(&apiv1.CreateSignerRequest{
@@ -143,7 +152,6 @@ func init() {
 	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
 	format := flagutil.LowerValue("format", []string{"base64", "hex", "raw"}, "base64")
 
-	flags.String("kms", "", "Uri with the kms configuration to use")
 	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
 	flags.Bool("pss", false, "Use RSA-PSS signature scheme instead of RSA PKCS #1")
 	flags.Var(format, "format", "The `format` to print the signature.\nOptions are base64, hex, or raw")
