@@ -17,6 +17,7 @@ import (
 	"github.com/smallstep/step-kms-plugin/cmd"
 
 	// KMS modules
+	_ "go.step.sm/crypto/kms/cloudkms"
 	_ "go.step.sm/crypto/kms/pkcs11"
 )
 
