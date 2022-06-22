@@ -18,8 +18,11 @@ import (
 	"fmt"
 	"io/fs"
 
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
+	"go.step.sm/crypto/kms/apiv1"
+	"go.step.sm/crypto/pemutil"
 )
 
 // certificateCmd represents the certificate command
@@ -31,9 +34,37 @@ var certificateCmd = &cobra.Command{
 			return showUsageErr(cmd)
 		}
 
-		kuri, _ := cmd.Flags().GetString("kms")
+		flags := cmd.Flags()
+		certFile := flagutil.MustString(flags, "import")
+		kuri := flagutil.MustString(flags, "kms")
 		if kuri == "" {
 			kuri = args[0]
+		}
+
+		if certFile != "" {
+			cert, err := pemutil.ReadCertificate(certFile)
+			if err != nil {
+				return err
+			}
+
+			km, err := kms.New(context.Background(), apiv1.Options{
+				URI: kuri,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to load key manager: %w", err)
+			}
+			defer km.Close()
+
+			cm, ok := km.(apiv1.CertificateManager)
+			if !ok {
+				return fmt.Errorf("%s does not implement a CertificateManager", kuri)
+			}
+			if err := cm.StoreCertificate(&apiv1.StoreCertificateRequest{
+				Name:        args[0],
+				Certificate: cert,
+			}); err != nil {
+				return err
+			}
 		}
 
 		fsys, err := kms.CertFS(context.TODO(), kuri)
@@ -54,4 +85,9 @@ var certificateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(certificateCmd)
 	certificateCmd.SilenceUsage = true
+
+	flags := certificateCmd.Flags()
+	flags.SortFlags = false
+
+	flags.String("import", "", "The certificate `file` to import")
 }
