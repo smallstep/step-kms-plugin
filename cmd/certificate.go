@@ -36,6 +36,7 @@ var certificateCmd = &cobra.Command{
 
 		flags := cmd.Flags()
 		certFile := flagutil.MustString(flags, "import")
+
 		kuri := flagutil.MustString(flags, "kms")
 		if kuri == "" {
 			kuri = args[0]

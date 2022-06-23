@@ -17,8 +17,13 @@ import (
 	"github.com/smallstep/step-kms-plugin/cmd"
 
 	// KMS modules
+	_ "go.step.sm/crypto/kms/awskms"
+	_ "go.step.sm/crypto/kms/azurekms"
 	_ "go.step.sm/crypto/kms/cloudkms"
 	_ "go.step.sm/crypto/kms/pkcs11"
+	_ "go.step.sm/crypto/kms/softkms"
+	_ "go.step.sm/crypto/kms/sshagentkms"
+	_ "go.step.sm/crypto/kms/yubikey"
 )
 
 func main() {

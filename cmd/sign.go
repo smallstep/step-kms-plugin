@@ -31,6 +31,9 @@ import (
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
+	"go.step.sm/crypto/sshutil"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 // signCmd represents the sign command
@@ -60,24 +63,31 @@ var signCmd = &cobra.Command{
 		}
 		defer km.Close()
 
-		var digest []byte
-		if len(args) == 2 {
-			digest, err = hex.DecodeString(args[1])
-			if err != nil {
-				return err
-			}
-		} else {
-			digest, err = ioutil.ReadAll(os.Stdin)
-			if err != nil {
-				return err
-			}
-		}
-
 		signer, err := km.CreateSigner(&apiv1.CreateSignerRequest{
 			SigningKey: args[0],
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create signer: %w", err)
+		}
+
+		var digest []byte
+		if len(args) == 2 {
+			// For Ed25519 keys treat input as data, otherwise as a hexadecimal
+			// string.
+			if signsRawInput(signer.Public()) {
+				digest = []byte(args[1])
+			} else {
+				digest, err = hex.DecodeString(args[1])
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			// Data passed by stdin is in binary form.
+			digest, err = ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				return err
+			}
 		}
 
 		so, err := getSignerOptions(signer.Public(), alg, pss)
@@ -101,6 +111,21 @@ var signCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func signsRawInput(pub crypto.PublicKey) bool {
+	switch pub.(type) {
+	case ed25519.PublicKey:
+		return true
+	case ssh.PublicKey, *agent.Key:
+		pk, err := sshutil.CryptoPublicKey(pub)
+		if err != nil {
+			return false
+		}
+		return signsRawInput(pk)
+	default:
+		return false
+	}
 }
 
 func getSignerOptions(pub crypto.PublicKey, alg string, pss bool) (crypto.SignerOpts, error) {
@@ -137,6 +162,12 @@ func getSignerOptions(pub crypto.PublicKey, alg string, pss bool) (crypto.Signer
 		return h, nil
 	case ed25519.PublicKey:
 		return crypto.Hash(0), nil
+	case ssh.PublicKey, *agent.Key:
+		pk, err := sshutil.CryptoPublicKey(pub)
+		if err != nil {
+			return nil, err
+		}
+		return getSignerOptions(pk, alg, pss)
 	default:
 		return nil, fmt.Errorf("unsupported public key type %T", pub)
 	}
