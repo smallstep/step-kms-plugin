@@ -49,6 +49,8 @@ var signCmd = &cobra.Command{
 		alg := flagutil.MustString(flags, "alg")
 		pss := flagutil.MustBool(flags, "pss")
 		format := flagutil.MustString(flags, "format")
+		in := flagutil.MustString(flags, "in")
+		verify := flagutil.MustBool(flags, "verify")
 
 		kuri := flagutil.MustString(flags, "kms")
 		if kuri == "" {
@@ -70,19 +72,37 @@ var signCmd = &cobra.Command{
 			return fmt.Errorf("failed to create signer: %w", err)
 		}
 
+		pub := signer.Public()
+		so, err := getSignerOptions(pub, alg, pss)
+		if err != nil {
+			return err
+		}
+
 		var digest []byte
-		if len(args) == 2 {
-			// For Ed25519 keys treat input as data, otherwise as a hexadecimal
-			// string.
-			if signsRawInput(signer.Public()) {
-				digest = []byte(args[1])
-			} else {
-				digest, err = hex.DecodeString(args[1])
-				if err != nil {
-					return err
-				}
+		switch {
+		case in != "":
+			data, err := os.ReadFile(in)
+			if err != nil {
+				return fmt.Errorf("failed to read file %q: %w", in, err)
 			}
-		} else {
+			if signsRawInput(pub) {
+				digest = data
+			} else if hashFunc := so.HashFunc(); hashFunc != 0 {
+				h := hashFunc.New()
+				h.Write(data)
+				digest = h.Sum(nil)
+			} else {
+				digest = data
+			}
+		case len(args) == 2:
+			if signsRawInput(pub) {
+				return fmt.Errorf("flag --in is required for type %T", pub)
+			}
+			digest, err = hex.DecodeString(args[1])
+			if err != nil {
+				return fmt.Errorf("failed to decode digest: %w", err)
+			}
+		default:
 			// Data passed by stdin is in binary form.
 			digest, err = ioutil.ReadAll(os.Stdin)
 			if err != nil {
@@ -90,14 +110,15 @@ var signCmd = &cobra.Command{
 			}
 		}
 
-		so, err := getSignerOptions(signer.Public(), alg, pss)
+		sig, err := signer.Sign(rand.Reader, digest, so)
 		if err != nil {
 			return err
 		}
 
-		sig, err := signer.Sign(rand.Reader, digest, so)
-		if err != nil {
-			return err
+		if verify {
+			if !verifySignature(signer, digest, sig, so) {
+				return fmt.Errorf("failed to verify the signature")
+			}
 		}
 
 		switch format {
@@ -117,12 +138,8 @@ func signsRawInput(pub crypto.PublicKey) bool {
 	switch pub.(type) {
 	case ed25519.PublicKey:
 		return true
-	case ssh.PublicKey, *agent.Key:
-		pk, err := sshutil.CryptoPublicKey(pub)
-		if err != nil {
-			return false
-		}
-		return signsRawInput(pk)
+	case ssh.PublicKey:
+		return true
 	default:
 		return false
 	}
@@ -173,6 +190,51 @@ func getSignerOptions(pub crypto.PublicKey, alg string, pss bool) (crypto.Signer
 	}
 }
 
+func verifySignature(signer crypto.Signer, data, sig []byte, so crypto.SignerOpts) bool {
+	switch pub := signer.Public().(type) {
+	case *ecdsa.PublicKey:
+		return ecdsa.VerifyASN1(pub, data, sig)
+	case *rsa.PublicKey:
+		if pss, ok := so.(*rsa.PSSOptions); ok {
+			return rsa.VerifyPSS(pub, so.HashFunc(), data, sig, pss) == nil
+		} else {
+			return rsa.VerifyPKCS1v15(pub, so.HashFunc(), data, sig) == nil
+		}
+	case ed25519.PublicKey:
+		return ed25519.Verify(pub, data, sig)
+	case ssh.PublicKey:
+		// Attempt to use the last signature if available.
+		if s, ok := signer.(interface{ LastSignature() *ssh.Signature }); ok {
+			if sshSig := s.LastSignature(); sshSig != nil {
+				return pub.Verify(data, s.LastSignature()) == nil
+			}
+		}
+		// Verify using the resulting signature.
+		// It won't work with sk keys.
+		return pub.Verify(data, &ssh.Signature{
+			Format: sshFormat(pub, so),
+			Blob:   sig,
+		}) == nil
+	default:
+		return false
+	}
+}
+
+func sshFormat(pub ssh.PublicKey, so crypto.SignerOpts) string {
+	if pub.Type() == ssh.KeyAlgoRSA {
+		switch so.HashFunc() {
+		case crypto.SHA256:
+			return ssh.SigAlgoRSASHA2256
+		case crypto.SHA512:
+			return ssh.SigAlgoRSASHA2512
+		case crypto.SHA1:
+			return ssh.SigAlgoRSA
+		}
+	}
+	return pub.Type()
+
+}
+
 func init() {
 	rootCmd.AddCommand(signCmd)
 	signCmd.SilenceUsage = true
@@ -186,4 +248,6 @@ func init() {
 	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
 	flags.Bool("pss", false, "Use RSA-PSS signature scheme instead of RSA PKCS #1")
 	flags.Var(format, "format", "The `format` to print the signature.\nOptions are base64, hex, or raw")
+	flags.String("in", "", "The `file` to sign. Required for Ed25519 keys.")
+	flags.Bool("verify", false, "Verify the signature with the public key")
 }
