@@ -5,6 +5,10 @@
 *.so
 *.dylib
 
+# Development
+bin/
+.vscode/
+
 # Test binary, built with `go test -c`
 *.test
 
