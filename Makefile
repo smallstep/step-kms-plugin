@@ -62,8 +62,14 @@ build:
 # Go generate
 #########################################
 
-generate:
+generate: build
 	$Q go generate ./...
+	$Q mkdir -p completions
+	$Q bin/step-kms-plugin completion bash > completions/bash_completion
+	$Q bin/step-kms-plugin completion fish > completions/fish_completion
+	$Q bin/step-kms-plugin completion powershell > completions/powershell_completion
+	$Q bin/step-kms-plugin completion zsh > completions/zsh_completion
+
 
 .PHONY: generate
 
