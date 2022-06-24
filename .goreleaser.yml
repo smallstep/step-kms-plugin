@@ -1,0 +1,111 @@
+# step-kms-plugin .goreleaser.yml file.
+# Check the documentation at:
+#  - http://goreleaser.com
+#  - https://github.com/goreleaser/goreleaser-cross
+#  - https://github.com/goreleaser/goreleaser-cross-example
+project_name: step-kms-plugin
+
+builds:
+  - id: linux-amd64
+    main: ./main.go
+    binary: step-kms-plugin
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CC=gcc
+      - CXX=g++
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+  - id: darwin-amd64
+    main: ./main.go
+    binary: step-kms-plugin
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    env:
+      - CC=o64-clang
+      - CXX=o64-clang++
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+  - id: darwin-arm64
+    main: ./main.go
+    binary: step-kms-plugin
+    goos:
+      - darwin
+    goarch:
+      - arm64
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+
+archives:
+  - id: step-kms-plugin
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    builds:
+      - linux-amd64
+      - darwin-amd64
+      - darwin-arm64
+    wrap_in_directory: "{{ .ProjectName }}_{{ .Version }}"
+    files:
+      - README.md
+      - LICENSE
+      - completions/*
+
+nfpms:
+  - builds:
+      - linux-amd64
+    package_name: step-kms-plugin
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    vendor: Smallstep Labs
+    homepage: https://github.com/smallstep/step-kms-plugin
+    maintainer: Smallstep <techadmin@smallstep.com>
+    description: >
+      step-kms-plugin is a plugin for step to manage keys and certificates on a cloud KMSs and HSMs
+    license: Apache 2.0
+    section: utils
+    formats:
+      - deb
+      - rpm
+    priority: optional
+    bindir: /usr/bin
+    contents:
+      - dst: /usr/bin/step-kms-plugin
+        type: ghost
+      - src: completions/bash_completion
+        dst: /usr/share/bash-completion/completions/step-kms-plugin
+      - src: completions/zsh_completion
+        dst: /usr/share/zsh/vendor-completions/_step-kms-plugin
+        packager: deb
+      - src: completions/zsh_completion
+        dst: /usr/share/zsh/site-functions/_step-kms-plugin
+        packager: rpm
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ .Tag }}"
+
+changelog:
+  sort: asc
+
+release:
+  github:
+    owner: goreleaser
+    name: step-kms-plugin
+  prerelease: auto
+  draft: false

@@ -1,0 +1,86 @@
+name: Create Release & Upload Assets
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  test:
+    name: Lint, Test, Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y libpcsclite-dev
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.18"
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: latest
+      - name: Test, Build
+        id: lintTestBuild
+        run: V=1 make ci
+
+  create_release:
+    name: Create Release
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract-tag.outputs.VERSION }}
+      vversion: ${{ steps.extract-tag.outputs.VVERSION }}
+      is_prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
+    steps:
+      - name: Extract Tag Names
+        id: extract-tag
+        run: |
+          VVERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "::set-output name=VVERSION::${VVERSION}"
+          echo "::set-output name=VERSION::${VERSION}"
+      - name: Is Pre-release
+        id: is_prerelease
+        run: |
+          set +e
+          echo ${{ github.ref }} | grep "\-rc.*"
+          OUT=$?
+          if [ $OUT -eq 0 ]; then IS_PRERELEASE=true; else IS_PRERELEASE=false; fi
+          echo "::set-output name=IS_PRERELEASE::${IS_PRERELEASE}"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
+
+  goreleaser:
+    name: Upload Assets to Github w/ goreleaser
+    runs-on: ubuntu-latest
+    needs: create_release
+    steps:
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y libpcsclite-dev
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - name: release dry run
+        run: make release-dry-run
+      - name: setup release environment
+        run: |-
+          echo 'GITHUB_TOKEN=${{secrets.GORELEASER_ACCESS_TOKEN}}' > .release-env
+      - name: release publish
+        run: make release

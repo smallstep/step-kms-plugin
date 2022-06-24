@@ -1,6 +1,6 @@
 PKG?=github.com/smallstep/step-kms-plugin
 BINNAME?=step-kms-plugin
-
+GOLANG_CROSS_VERSION?=v1.18.3
 
 # Set V to 1 for verbose output from the Makefile
 Q=$(if $V,,@)
@@ -9,6 +9,10 @@ SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 GOOS_OVERRIDE ?=
 OUTPUT_ROOT=output/
 RELEASE=./.releases
+
+#########################################
+# Default
+#########################################
 
 all: lint test build
 
@@ -70,12 +74,12 @@ generate: build
 	$Q bin/step-kms-plugin completion powershell > completions/powershell_completion
 	$Q bin/step-kms-plugin completion zsh > completions/zsh_completion
 
-
 .PHONY: generate
 
 #########################################
 # Test
 #########################################
+
 test:
 	$Q go test -coverprofile=coverage.out ./...
 
@@ -92,6 +96,32 @@ lint:
 	$Q golangci-lint run --timeout=30m
 
 .PHONY: fmt lint
+
+#########################################
+# Release
+#########################################
+
+release-dry-run:
+	$Q @docker run --rm --privileged -e CGO_ENABLED=1 \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PKG) \
+		-w /go/src/$(PKG) \
+		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
+		--rm-dist --skip-validate --skip-publish
+
+release:
+	@if [ ! -f ".release-env" ]; then \
+		echo "\033[91m.release-env is required for release\033[0m";\
+		exit 1;\
+	fi
+	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PKG) \
+		-w /go/src/$(PKG) \
+		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
+		release --rm-dist
+
+.PHONY: release-dry-run release
 
 #########################################
 # Install
