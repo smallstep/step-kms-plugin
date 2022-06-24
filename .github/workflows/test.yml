@@ -3,9 +3,9 @@ name: Lint, Test, Build
 on:
   push:
     tags-ignore:
-    - 'v*'
+      - "v*"
     branches:
-    - "**"
+      - "**"
   pull_request:
 
 jobs:
@@ -13,21 +13,16 @@ jobs:
     name: Lint, Test, Build
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v2
-      -
-        name: Setup Go
-        uses: actions/setup-go@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
         with:
-          go-version: '1.18'
-      -
-        name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+          go-version: "1.18"
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: 'v1.46.2'
-          args: --timeout=30m
-      -
-        name: Test, Build
-        id: lintTestBuild
+          version: "latest"
+      - name: Test, Build
+        id: testAndBuild
         run: V=1 make ci
