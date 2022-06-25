@@ -103,6 +103,7 @@ lint:
 
 release-dry-run:
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 \
+		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
@@ -115,6 +116,7 @@ release:
 		exit 1;\
 	fi
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
+		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
