@@ -9,6 +9,10 @@
 bin/
 .vscode/
 
+# Release
+.release-env
+dist/
+
 # Test binary, built with `go test -c`
 *.test
 
