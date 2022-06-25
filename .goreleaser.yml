@@ -83,8 +83,6 @@ nfpms:
     priority: optional
     bindir: /usr/bin
     contents:
-      - dst: /usr/bin/step-kms-plugin
-        type: ghost
       - src: completions/bash_completion
         dst: /usr/share/bash-completion/completions/step-kms-plugin
       - src: completions/zsh_completion
