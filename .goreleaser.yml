@@ -103,7 +103,7 @@ changelog:
 
 release:
   github:
-    owner: goreleaser
+    owner: smallstep
     name: step-kms-plugin
   prerelease: auto
   draft: false
