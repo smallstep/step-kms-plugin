@@ -15,9 +15,7 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/spf13/cobra"
 )
@@ -38,17 +36,7 @@ application.
 Common operations of step-kms-plugin include:
  - Create asymmetric keys.
  - Sign data using an existing key.
- - Extract public keys and certificates stored in a KMS.
-
-For development purposes, on macOS and Linux, step-kms-plugin automatically
-configures the KMS to use softhsm2 with the token smallstep.
-
-To initialize the token, run:
-  softhsm2-util --init-token --free --token smallstep \
-  --label smallstep --so-pin password --pin password
-
-To delete it, run:
-  softhsm2-util --delete-token --token smallstep`,
+ - Extract public keys and certificates stored in a KMS.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -70,23 +58,5 @@ func showUsageErr(cmd *cobra.Command) error {
 
 func init() {
 	flags := rootCmd.PersistentFlags()
-	var path string
-	switch runtime.GOOS {
-	case "darwin":
-		if runtime.GOARCH == "arm64" {
-			path = "/opt/homebrew/lib/softhsm/libsofthsm2.so"
-		} else {
-			path = "/usr/local/lib/softhsm/libsofthsm2.so"
-		}
-	case "linux":
-		path = "/usr/lib/softhsm/libsofthsm2.so"
-	}
-
-	var kms string
-	if path != "" {
-		if _, err := os.Stat(path); err == nil {
-			kms = fmt.Sprintf("pkcs11:module-path=%s;token=smallstep?pin-value=password", path)
-		}
-	}
-	flags.String("kms", kms, "The `uri` with the kms configuration to use")
+	flags.String("kms", "", "The `uri` with the kms configuration to use")
 }
