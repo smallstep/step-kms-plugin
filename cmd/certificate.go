@@ -28,7 +28,17 @@ import (
 // certificateCmd represents the certificate command
 var certificateCmd = &cobra.Command{
 	Use:   "certificate <uri>",
-	Short: "print a certificate in a kms",
+	Short: "print or import a certificate in a kms",
+	Long:  `This command, if the KMS supports it, it orints or imports a certificate in a KMS.`,
+	Example: `  # Import a certificate to a PKCS #11 module:
+  step-kms-plugin certificate --import cert.pem \
+  --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
+  'pkcs11:id=2000;object=my-cert'
+
+  # Print a previously store certificate:
+  step-kms-plugin certificate \
+  --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
+  'pkcs11:id=2000;object=my-cert'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showUsageErr(cmd)

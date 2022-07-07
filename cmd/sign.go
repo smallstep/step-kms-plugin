@@ -40,6 +40,28 @@ import (
 var signCmd = &cobra.Command{
 	Use:   "sign <uri> [<digest>]",
 	Short: "sign the given digest using the kms",
+	Long: `Signs a digest or a file using a key in the KMS.
+
+When a digest is passed this must be using hexadecimal encoding, but when this
+command is used as a plugin by step, or when the digest or the message to sign
+is passed as plain bytes on stdin without any special encoding.`,
+	Example: `  # Signs the given file using a key in the PKCS #11 module.
+  step-kms-plugin --in data.bin \
+  --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
+  'pkcs11:id=1000'
+
+  # Signs a digest using a key in Google's Cloud KMS.
+  step-kms-plugin 1b8de4254213f8c3f784b3da4611eaeec1e720e74b4357029f8271b4ef9e1c2c \
+  --kms cloudkms: \
+  projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key/cryptoKeyVersions/1
+
+  # Signs and verify using RSA PKCS #1 with SHA512:
+  step-kms-plugin --in data.bin --verify --alg SHA512 \
+  --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
+  'pkcs11:object=my-rsa-key'
+
+  # Sign a file using an Ed25519 key in the ssh-agent :
+  step-kms-plugin sign --in data.bin sshagentkms:user@localhost`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if l := len(args); l != 1 && l != 2 {
 			return showUsageErr(cmd)
