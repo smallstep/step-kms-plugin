@@ -26,17 +26,16 @@ var rootCmd = &cobra.Command{
 	Short: "step plugin to manage KMSs",
 	Long: `step-kms-plugin is a plugin for step that allows performing cryptographic
 operations on Hardware Security Modules (HSMs), Cloud Key Management Services
-(KMSs) and devices like YubiKey using the Personal Identity Verification (PIV)
-interface. This command will always use the term KSM independently of the
-interface used.
+(KMSs) and devices like YubiKey that implement a Personal Identity Verification (PIV)
+interface. This command uses the term KMS to refer to any of these interfaces.
 
-step-kms-plugin can be used using 'step kms [command]' or as a standalone
+step-kms-plugin can be used using 'step kms [command]', or as a standalone
 application.
 
-Common operations of step-kms-plugin include:
- - Create asymmetric keys.
- - Sign data using an existing key.
- - Extract public keys and certificates stored in a KMS.`,
+Common operations include:
+ - Create asymmetric key pair on a KMS
+ - Sign data using an existing KMS-stored key
+ - Extract public keys and certificates stored in a KMS`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

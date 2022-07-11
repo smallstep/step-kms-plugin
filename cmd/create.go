@@ -30,16 +30,16 @@ import (
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create <uri>",
-	Short: "generates a key in the KMS",
+	Short: "generates a key pair in the KMS",
 	Long: `Creates a private key in the KMS and prints its public key.
 
-This command allows the creation of new asymmetric keys on the KMS. By default,
+This command creates a new asymmetric key pair on the KMS. By default,
 it creates an EC P-256 key, but the --kty, --crv and --size flags can be
-combined to create a different type of key. RSA and EC keys are generally
-supported by all the KMS, but Ed25519 (OKP) support is currently very limited.
+combined to adjust the key properties. RSA and EC keys are boardly
+supported, but as of mid-2022 Ed25519 (OKP) support is very limited.
 
-For keys in the AWS KMS is recommended to use the JSON output as we need the
-generated key-id to access it.
+For keys in AWS KMS, we recommend using --json for output, as you will need the
+generated key-id.
 
 Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 (e.g. pkcs11:id=10ab;object=my-label).`,
@@ -72,7 +72,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   # Create a key on AWS KMS with the name tag my-key, but return the value in JSON so we can get the key-id to access it.
   step-kms-plugin create --json --kms awskms:region=us-west-2 my-key
 
-  # Create an 2048 bit RSA key on a YubiKey:
+  # Create a 2048-bit RSA key on a YubiKey:
   step-kms-plugin create --kty RSA --size 2048 yubikey:slot-id=82`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
