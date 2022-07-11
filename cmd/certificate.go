@@ -28,7 +28,7 @@ import (
 // certificateCmd represents the certificate command
 var certificateCmd = &cobra.Command{
 	Use:   "certificate <uri>",
-	Short: "print or import a certificate in a kms",
+	Short: "print or import a certificate in a KMS",
 	Long:  `This command, if the KMS supports it, it prints or imports a certificate in a KMS.`,
 	Example: `  # Import a certificate to a PKCS #11 module:
   step-kms-plugin certificate --import cert.pem \
