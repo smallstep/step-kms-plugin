@@ -52,12 +52,12 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-source=/var/run/pass.txt' \
   'pkcs11:id=1000;object=my-key'
 
-  # Create an 3072 bit RSA key in a PKCS#11 module:
+  # Create an 3072-bit RSA key in a PKCS#11 module:
   step-kms-plugin create --kty RSA \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
   'pkcs11:id=1000;object=my-rsa-key'
 
-  # Create a 4096 bit RSA-PSS key on Google's Cloud KMS with a credentials file:
+  # Create a 4096-bit RSA-PSS key on Google's Cloud KMS with a credentials file:
   step-kms-plugin create --kty RSA --size 4096 --pss \
   --kms cloudkms:credentials-file=kms-credentials.json \
   projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key
