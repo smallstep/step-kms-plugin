@@ -20,6 +20,20 @@ builds:
       - -trimpath
     ldflags:
       - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+  - id: linux-arm64
+    main: ./main.go
+    binary: step-kms-plugin
+    goos:
+      - linux
+    goarch:
+      - arm64
+    env:
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
   - id: darwin-amd64
     main: ./main.go
     binary: step-kms-plugin
@@ -48,6 +62,20 @@ builds:
       - -trimpath
     ldflags:
       - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+  - id: windows-amd64
+    main: ./main.go
+    binary: step-kms-plugin
+    goos:
+      - windows
+    goarch:
+      - amd64
+    env:
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
 
 archives:
   - id: step-kms-plugin
@@ -57,8 +85,10 @@ archives:
         format: zip
     builds:
       - linux-amd64
+      - linux-arm64
       - darwin-amd64
       - darwin-arm64
+      - windows-amd64
     wrap_in_directory: "{{ .ProjectName }}_{{ .Version }}"
     files:
       - README.md
@@ -68,6 +98,7 @@ archives:
 nfpms:
   - builds:
       - linux-amd64
+      - linux-arm64
     package_name: step-kms-plugin
     file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     vendor: Smallstep Labs
