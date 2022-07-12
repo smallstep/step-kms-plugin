@@ -30,12 +30,50 @@ import (
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create <uri>",
-	Short: "generates a key in the KMS",
-	Example: `  # Create an EC P-256 private key in a PKCS #11 module:
-  step-kms-plugin create "pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm;id=1000?pin-value=pass"
+	Short: "generates a key pair in the KMS",
+	Long: `Creates a private key in the KMS and prints its public key.
 
-  # Create an RSA key:
-  step-kms-plugin create --kty RSA --size 4096 "pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm;id=1000?pin-value=pass"`,
+This command creates a new asymmetric key pair on the KMS. By default,
+it creates an EC P-256 key, but the --kty, --crv and --size flags can be
+combined to adjust the key properties. RSA and EC keys are boardly
+supported, but as of mid-2022 Ed25519 (OKP) support is very limited.
+
+For keys in AWS KMS, we recommend using --json for output, as you will need the
+generated key-id.
+
+Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
+(e.g. pkcs11:id=10ab;object=my-label).`,
+	Example: `  # Create an EC P-256 private key in a PKCS #11 module:
+  step-kms-plugin create \
+  'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm;id=1000;object=my-key?pin-value=pass'
+
+  # Create an EC P-384 private key in a PKCS #11 module:
+  step-kms-plugin create --kty EC --crv P-384 \
+  --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-source=/var/run/pass.txt' \
+  'pkcs11:id=1000;object=my-key'
+
+  # Create an 3072-bit RSA key in a PKCS#11 module:
+  step-kms-plugin create --kty RSA \
+  --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
+  'pkcs11:id=1000;object=my-rsa-key'
+
+  # Create a 4096-bit RSA-PSS key on Google's Cloud KMS with a credentials file:
+  step-kms-plugin create --kty RSA --size 4096 --pss \
+  --kms cloudkms:credentials-file=kms-credentials.json \
+  projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key
+
+  # Create a key on Google's Cloud KMS using gcloud credentials:
+  step-kms-plugin create --kms cloudkms: \
+  projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-ec-key
+
+  # Create a key on Azure's Key Vault using az credentials:
+  step-kms-plugin create 'azurekms:vault=my-key-vault;name=my-key'
+
+  # Create a key on AWS KMS with the name tag my-key, but return the value in JSON so we can get the key-id to access it.
+  step-kms-plugin create --json --kms awskms:region=us-west-2 my-key
+
+  # Create a 2048-bit RSA key on a YubiKey:
+  step-kms-plugin create --kty RSA --size 2048 yubikey:slot-id=82`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {

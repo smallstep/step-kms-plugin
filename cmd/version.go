@@ -32,6 +32,7 @@ var (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "print the current version",
+	Long:  "Prints the current version.",
 	Run: func(cmd *cobra.Command, args []string) {
 		if Version == "" {
 			Version = "0000000-dev"
