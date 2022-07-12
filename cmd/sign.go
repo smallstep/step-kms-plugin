@@ -42,9 +42,13 @@ var signCmd = &cobra.Command{
 	Short: "sign the given digest using the kms",
 	Long: `Signs a digest or a file using a key in the KMS.
 
-When a digest is passed this must be using hexadecimal encoding, but when this
-command is used as a plugin by step, or when the digest or the message to sign
-is passed as plain bytes on stdin without any special encoding.`,
+While RSA and EC signing schemes sign a SHA-2 digest of the data, Ed25519 signs
+the data itself. To accommodate either approach, this command accepts two formats
+of input to be signed: a hex digest as an optional parameter,
+or a binary data filename via the --in flag.
+
+If you use the --in flag with an EC or RSA key, this command will generate the
+digest of the data file for you.`,
 	Example: `  # Signs the given file using a key in the PKCS #11 module.
   step-kms-plugin --in data.bin \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
