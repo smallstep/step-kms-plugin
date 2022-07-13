@@ -6,7 +6,7 @@ on a cloud KMSs and HSMs.
 > announcements.
 
 **TL;DR** You can use `go install` to compile and install `step-kms-plugin` in
-your `GOBIN`:
+your `$GOBIN`:
 
 ```console
 go install github.com/smallstep/step-kms-plugin@latest
@@ -15,7 +15,7 @@ go install github.com/smallstep/step-kms-plugin@latest
 ## Installation
 
 The most generic way to install `step-kms-plugin` is to use `go install` to
-compile it and install it in your `GOBIN`, which defaults to `$(go env GOPATH)/bin`.
+compile it and install it in your `$GOBIN`, which defaults to `$(go env GOPATH)/bin`.
 
 You can also download the last release for your platform in the [releases
 page](https://github.com/smallstep/step-kms-plugin/releases).
