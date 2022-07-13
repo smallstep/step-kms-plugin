@@ -3,6 +3,6 @@
 set -e
 
 apt update
-apt install -y libpcsclite-dev
+apt install --no-install-recommends -y libpcsclite-dev libpcsclite-dev:arm64
 
 exec /entrypoint.sh $@
