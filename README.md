@@ -247,7 +247,7 @@ $ step certificate create --csr \
   leaf.internal leaf.csr
 Your certificate signing request has been saved in leaf.csr.
 $ step certificate sign --kms 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep?pin-value=password' \
-  leaf.cr intermediate_ca.crt pkcs11:id=2001
+  leaf.csr intermediate_ca.crt pkcs11:id=2001
 -----BEGIN CERTIFICATE-----
 MIIBxTCCAWygAwIBAgIQeauacIrgtv7uPgzk+Z4puzAKBggqhkjOPQQDAjAjMSEw
 HwYDVQQDExhTbWFsbHN0ZXAgSW50ZXJtZWRpYXRlQ0EwHhcNMjIwNzEyMjE0MTI4
