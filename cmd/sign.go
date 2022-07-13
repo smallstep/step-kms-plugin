@@ -197,9 +197,15 @@ func getSignerOptions(pub crypto.PublicKey, alg string, pss bool) (crypto.Signer
 			return nil, fmt.Errorf("unsupported hashing algorithm %q", alg)
 		}
 		if pss {
+			// rsa.PSSSaltLengthAuto is not supported by crypto11. The salt
+			// length here is the same used by Go when PSSSaltLengthAuto is
+			// used.
+			//
+			// This can be fixed if https://github.com/ThalesIgnite/crypto11/pull/96
+			// gets merged.
 			return &rsa.PSSOptions{
 				Hash:       h,
-				SaltLength: rsa.PSSSaltLengthAuto,
+				SaltLength: (k.N.BitLen()-1+7)/8 - 2 - h.Size(),
 			}, nil
 		}
 		return h, nil
