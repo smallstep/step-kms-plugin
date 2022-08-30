@@ -68,10 +68,21 @@ Currently this command is only supported on YubiKeys.`,
 
 		switch {
 		case resp.Certificate != nil:
-			return pem.Encode(os.Stdout, &pem.Block{
+			if err := pem.Encode(os.Stdout, &pem.Block{
 				Type:  "CERTIFICATE",
 				Bytes: resp.Certificate.Raw,
-			})
+			}); err != nil {
+				return fmt.Errorf("failed to encode certificate: %w", err)
+			}
+			for _, c := range resp.CertificateChain {
+				if err := pem.Encode(os.Stdout, &pem.Block{
+					Type:  "CERTIFICATE",
+					Bytes: c.Raw,
+				}); err != nil {
+					return fmt.Errorf("failed to encode certificate chain: %w", err)
+				}
+			}
+			return nil
 		case resp.PublicKey != nil:
 			block, err := pemutil.Serialize(resp.PublicKey)
 			if err != nil {
