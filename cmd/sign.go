@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/smallstep/step-kms-plugin/internal/flagutil"
@@ -130,7 +130,7 @@ digest of the data file for you.`,
 			}
 		default:
 			// Data passed by stdin is in binary form.
-			digest, err = ioutil.ReadAll(os.Stdin)
+			digest, err = io.ReadAll(os.Stdin)
 			if err != nil {
 				return err
 			}
