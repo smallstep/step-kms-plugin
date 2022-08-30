@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	go.step.sm/crypto v0.18.1-0.20220830002651-0b8f2d224982
+	go.step.sm/crypto v0.18.1-0.20220830004215-f2a527de0e47
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 )
 
@@ -68,4 +68,4 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 )
 
-// replace go.step.sm/crypto => ../crypto
+replace go.step.sm/crypto => ../crypto
