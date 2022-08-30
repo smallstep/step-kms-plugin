@@ -34,7 +34,7 @@ var attestCmd = &cobra.Command{
 	
 Currently this command is only supported on YubiKeys.`,
 	Example: `  # Get the attestation certificate from a YubiKey:
-  step-kms-plugin attest "yubikey:slot-id=9c"`,
+  step-kms-plugin attest yubikey:slot-id=9c`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showUsageErr(cmd)
