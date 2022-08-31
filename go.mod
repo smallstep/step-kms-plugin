@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	go.step.sm/crypto v0.18.1-0.20220830223202-a7834b89becb
+	go.step.sm/crypto v0.19.0
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 )
 
