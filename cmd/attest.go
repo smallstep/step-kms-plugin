@@ -98,7 +98,4 @@ Currently this command is only supported on YubiKeys.`,
 func init() {
 	rootCmd.AddCommand(attestCmd)
 	attestCmd.SilenceUsage = true
-
-	flags := attestCmd.Flags()
-	flags.SortFlags = false
 }
