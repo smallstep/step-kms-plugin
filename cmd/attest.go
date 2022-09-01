@@ -56,7 +56,7 @@ Currently this command is only supported on YubiKeys.`,
 
 		attester, ok := km.(apiv1.Attester)
 		if !ok {
-			return fmt.Errorf("%s does not implement an Attester", kuri)
+			return fmt.Errorf("%s does not implement Attester", kuri)
 		}
 
 		resp, err := attester.CreateAttestation(&apiv1.CreateAttestationRequest{
@@ -90,7 +90,7 @@ Currently this command is only supported on YubiKeys.`,
 			}
 			return pem.Encode(os.Stdout, block)
 		default:
-			return fmt.Errorf("failed to create attestation: unsupported response")
+			return errors.New("failed to create attestation: unsupported response")
 		}
 	},
 }
