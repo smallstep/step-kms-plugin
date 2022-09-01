@@ -16,6 +16,7 @@ package cmd
 import (
 	"context"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"os"
 
