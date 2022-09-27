@@ -1,28 +1,26 @@
 # step-kms-plugin
-[step](https://github.com/smallstep/cli) plugin to manage keys and certificates
-on a cloud KMSs and HSMs.
+
+This is a tool that helps manage keys and certificates on a cloud KMSs and HSMs.
+It can be used independently, or as a plugin for [`step`](https://github.com/smallstep/cli).
 
 > ⚠️ This tool is currently in beta mode and its usage of might change without
 > announcements.
 
-**TL;DR** You can use `go install` to compile and install `step-kms-plugin` in
-your `$GOBIN`:
-
-```console
-go install github.com/smallstep/step-kms-plugin@latest
-```
-
 ## Installation
 
-The most generic way to install `step-kms-plugin` is to use `go install` to
+There's two installation options:
+
+- The most generic way to install `step-kms-plugin` is to use `go install` to
 compile it and install it in your `$GOBIN`, which defaults to `$(go env GOPATH)/bin`.
 
-You can also download the last release for your platform in the [releases
-page](https://github.com/smallstep/step-kms-plugin/releases).
+  ```console
+  go install github.com/smallstep/step-kms-plugin@latest
+  ```
 
-To use `step-kms-plugin` as a `step` plugin, you need the binary located either
-in a `plugins` directory of your `$STEPPATH` (`$(step path --base)/plugins`) or
-in your `$PATH`.
+- Alternatively, download the [latest release binary for your platform](https://github.com/smallstep/step-kms-plugin/releases).
+
+To use `step-kms-plugin` as a plugin for `step` (eg. `step kms create ...`),
+add it to your `$PATH` or to `$(step path --base)/plugins`.
 
 ## Supported KMSs
 
@@ -36,7 +34,11 @@ them provide the full functionality:
 * [YubiKey PIV](https://developers.yubico.com/PIV/)
 * ssh-agent
 
-## Usage
+## Usage with `step-ca`
+
+If you're setting up a `step-ca` PKI on one of the supported KMSs, check out our [detailed tutorials in our Cryptographic Protection docs](https://smallstep.com/docs/step-ca/configuration/#cryptographic-protection).
+
+## General Usage
 
 `step-kms-plugin` can be used as a standalone application or in conjunction with
 `step`.
