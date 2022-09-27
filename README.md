@@ -204,7 +204,7 @@ And use it to create the root certificate:
 ```console
 $ step certificate create --profile root-ca \
   --kms 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep?pin-value=password' \
-  --key 'pkcs11:id=2000'
+  --key 'pkcs11:id=2000' \
   "Smallstep Root CA" root_ca.crt
 Your certificate has been saved in root_ca.crt.
 ```

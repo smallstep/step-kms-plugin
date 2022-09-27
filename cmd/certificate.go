@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/pem"
 	"fmt"
 	"io/fs"
 
@@ -52,43 +53,56 @@ var certificateCmd = &cobra.Command{
 			kuri = args[0]
 		}
 
-		if certFile != "" {
-			cert, err := pemutil.ReadCertificate(certFile)
+		// Read a certificate using the CertFS.
+		if certFile == "" {
+			fsys, err := kms.CertFS(context.TODO(), kuri)
 			if err != nil {
 				return err
 			}
 
-			km, err := kms.New(context.Background(), apiv1.Options{
-				URI: kuri,
-			})
+			b, err := fs.ReadFile(fsys, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to load key manager: %w", err)
-			}
-			defer km.Close()
-
-			cm, ok := km.(apiv1.CertificateManager)
-			if !ok {
-				return fmt.Errorf("%s does not implement a CertificateManager", kuri)
-			}
-			if err := cm.StoreCertificate(&apiv1.StoreCertificateRequest{
-				Name:        args[0],
-				Certificate: cert,
-			}); err != nil {
 				return err
 			}
+
+			fmt.Print(string(b))
+			return nil
 		}
 
-		fsys, err := kms.CertFS(context.TODO(), kuri)
+		// Import and read certificate using the key manager to avoid opening the kms twice.
+		cert, err := pemutil.ReadCertificate(certFile)
 		if err != nil {
 			return err
 		}
 
-		b, err := fs.ReadFile(fsys, args[0])
+		km, err := kms.New(context.Background(), apiv1.Options{
+			URI: kuri,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to load key manager: %w", err)
+		}
+		defer km.Close()
+
+		cm, ok := km.(apiv1.CertificateManager)
+		if !ok {
+			return fmt.Errorf("%s does not implement a CertificateManager", kuri)
+		}
+		if err := cm.StoreCertificate(&apiv1.StoreCertificateRequest{
+			Name:        args[0],
+			Certificate: cert,
+		}); err != nil {
+			return err
+		}
+		cert, err = cm.LoadCertificate(&apiv1.LoadCertificateRequest{
+			Name: args[0],
+		})
 		if err != nil {
 			return err
 		}
-
-		fmt.Print(string(b))
+		fmt.Print(string(pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: cert.Raw,
+		})))
 		return nil
 	},
 }
