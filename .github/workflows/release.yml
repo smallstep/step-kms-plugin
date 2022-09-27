@@ -7,26 +7,10 @@ on:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
-  test:
-    name: Lint, Test, Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install dependencies
-        run: sudo apt update && sudo apt install -y libpcsclite-dev
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.19'
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: latest
-          args: --timeout=5m
-      - name: Test, Build
-        id: lintTestBuild
-        run: V=1 make ci
+  ci:
+    uses: smallstep/step-kms-plugin/.github/workflows/ci.yml@max/ci
+    secrets: inherit
+
 
   create_release:
     name: Create Release

@@ -68,7 +68,7 @@ digest of the data file for you.`,
   step-kms-plugin sign --in data.bin sshagentkms:user@localhost`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if l := len(args); l != 1 && l != 2 {
-			return showUsageErr(cmd)
+			return showErrUsage(cmd)
 		}
 
 		flags := cmd.Flags()
@@ -211,7 +211,7 @@ func getSignerOptions(pub crypto.PublicKey, alg string, pss bool) (crypto.Signer
 		return h, nil
 	case ed25519.PublicKey:
 		return crypto.Hash(0), nil
-	case ssh.PublicKey, *agent.Key:
+	case *agent.Key, ssh.PublicKey:
 		pk, err := sshutil.CryptoPublicKey(pub)
 		if err != nil {
 			return nil, err
@@ -229,9 +229,8 @@ func verifySignature(signer crypto.Signer, data, sig []byte, so crypto.SignerOpt
 	case *rsa.PublicKey:
 		if pss, ok := so.(*rsa.PSSOptions); ok {
 			return rsa.VerifyPSS(pub, so.HashFunc(), data, sig, pss) == nil
-		} else {
-			return rsa.VerifyPKCS1v15(pub, so.HashFunc(), data, sig) == nil
 		}
+		return rsa.VerifyPKCS1v15(pub, so.HashFunc(), data, sig) == nil
 	case ed25519.PublicKey:
 		return ed25519.Verify(pub, data, sig)
 	case ssh.PublicKey:
@@ -256,15 +255,14 @@ func sshFormat(pub ssh.PublicKey, so crypto.SignerOpts) string {
 	if pub.Type() == ssh.KeyAlgoRSA {
 		switch so.HashFunc() {
 		case crypto.SHA256:
-			return ssh.SigAlgoRSASHA2256
+			return ssh.KeyAlgoRSASHA256
 		case crypto.SHA512:
-			return ssh.SigAlgoRSASHA2512
+			return ssh.KeyAlgoRSASHA512
 		case crypto.SHA1:
-			return ssh.SigAlgoRSA
+			return ssh.KeyAlgoRSA
 		}
 	}
 	return pub.Type()
-
 }
 
 func init() {
