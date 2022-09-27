@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -77,7 +77,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			return showUsageErr(cmd)
+			return showErrUsage(cmd)
 		}
 
 		flags := cmd.Flags()

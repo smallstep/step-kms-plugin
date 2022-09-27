@@ -59,12 +59,10 @@ func Value(name string, allowed []string, defaultValue string) pflag.Value {
 // normalized values to upper-case.
 func UpperValue(name string, allowed []string, defaultValue string) pflag.Value {
 	return &value{
-		Name:    name,
-		Allowed: allowed,
-		Value:   defaultValue,
-		Normalize: func(s string) string {
-			return strings.ToUpper(s)
-		},
+		Name:      name,
+		Allowed:   allowed,
+		Value:     defaultValue,
+		Normalize: strings.ToUpper,
 	}
 }
 
@@ -73,12 +71,10 @@ func UpperValue(name string, allowed []string, defaultValue string) pflag.Value 
 // normalized values to lower-case.
 func LowerValue(name string, allowed []string, defaultValue string) pflag.Value {
 	return &value{
-		Name:    name,
-		Allowed: allowed,
-		Value:   defaultValue,
-		Normalize: func(s string) string {
-			return strings.ToLower(s)
-		},
+		Name:      name,
+		Allowed:   allowed,
+		Value:     defaultValue,
+		Normalize: strings.ToLower,
 	}
 }
 

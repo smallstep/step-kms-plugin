@@ -50,7 +50,7 @@ var keyCmd = &cobra.Command{
   step-kms-plugin key 'azurekms:vault=my-key-vault;name=my-key'
 
   # Get the public key key from AWS KMS.
-  step-kms-plugin key 'awskms:key-id=acbebc8f-822d-4c1c-b5d1-eb3a8fcaced7;region=us-west-1'
+  step-kms-plugin key 'awskms:key-id=acbebc8f-822d-4c1c-b5d1-eb3a8fcaced7;region=us-west-1' //gitleaks:allow
 
   # Get key from a YubiKey:
   step-kms-plugin key yubikey:slot-id=82
@@ -59,7 +59,7 @@ var keyCmd = &cobra.Command{
   step-kms-plugin key sshagentkms:user@localhost`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			return showUsageErr(cmd)
+			return showErrUsage(cmd)
 		}
 
 		flags := cmd.Flags()

@@ -42,7 +42,7 @@ var certificateCmd = &cobra.Command{
   'pkcs11:id=2000;object=my-cert'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			return showUsageErr(cmd)
+			return showErrUsage(cmd)
 		}
 
 		flags := cmd.Flags()
