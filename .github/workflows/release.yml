@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    uses: smallstep/step-kms-plugin/.github/workflows/ci.yml@max/ci
+    uses: smallstep/step-kms-plugin/.github/workflows/ci.yml@main
     secrets: inherit
 
 
