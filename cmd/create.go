@@ -69,11 +69,14 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   # Create a key on Azure's Key Vault using az credentials:
   step-kms-plugin create 'azurekms:vault=my-key-vault;name=my-key'
 
-  # Create a key on AWS KMS with the name tag my-key, but return the value in JSON so we can get the key-id to access it.
+  # Create a key on AWS KMS with the name tag my-key, but return the value in JSON so we can get the key-id to access it:
   step-kms-plugin create --json --kms awskms:region=us-west-2 my-key
 
   # Create a 2048-bit RSA key on a YubiKey:
-  step-kms-plugin create --kty RSA --size 2048 yubikey:slot-id=82`,
+  step-kms-plugin create --kty RSA --size 2048 yubikey:slot-id=82
+
+  # Create an EC P-256 private key on a YubiKey with the touch policy "always" and pin policy "once":
+  step-kms-plugin create --touch-policy always --pin-policy once yubikey:slot-id=82`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
@@ -89,6 +92,8 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		pss := flagutil.MustBool(flags, "pss")
 		extractable := flagutil.MustBool(flags, "extractable")
 		pl := flagutil.MustString(flags, "protection-level")
+		pinPolicy := pinPolicyMapping[flagutil.MustString(flags, "pin-policy")]
+		touchPolicy := touchPolicyMapping[flagutil.MustString(flags, "touch-policy")]
 
 		if kty != "RSA" {
 			size = 0
@@ -128,6 +133,8 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 			Bits:               size,
 			ProtectionLevel:    protectionLevel,
 			Extractable:        extractable,
+			PINPolicy:          pinPolicy,
+			TouchPolicy:        touchPolicy,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create key: %w", err)
@@ -189,6 +196,20 @@ var okpSignatureAlgorithmMapping = map[okpParams]apiv1.SignatureAlgorithm{
 	{"ED25519"}: apiv1.PureEd25519,
 }
 
+var pinPolicyMapping = map[string]apiv1.PINPolicy{
+	"":       0, // Use default on YubiKey kms (always)
+	"NEVER":  apiv1.PINPolicyNever,
+	"ALWAYS": apiv1.PINPolicyAlways,
+	"ONCE":   apiv1.PINPolicyOnce,
+}
+
+var touchPolicyMapping = map[string]apiv1.TouchPolicy{
+	"":       0, // Use default on YubiKey kms (never)
+	"NEVER":  apiv1.TouchPolicyNever,
+	"ALWAYS": apiv1.TouchPolicyAlways,
+	"CACHED": apiv1.TouchPolicyCached,
+}
+
 func getSignatureAlgorithm(kty, crv, alg string, pss bool) apiv1.SignatureAlgorithm {
 	switch strings.ToUpper(kty) {
 	case "EC":
@@ -224,12 +245,16 @@ func init() {
 	crv := flagutil.NormalizedValue("crv", []string{"P256", "P384", "P521", "Ed25519"}, "P256")
 	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
 	protectionLevel := flagutil.UpperValue("protection-level", []string{"SOFTWARE", "HSM"}, "SOFTWARE")
+	pinPolicy := flagutil.UpperValue("pin-policy", []string{"NEVER", "ALWAYS", "ONCE"}, "")
+	touchPolicy := flagutil.UpperValue("touch-policy", []string{"NEVER", "ALWAYS", "CACHED"}, "")
 
 	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC, RSA or OKP")
 	flags.Var(crv, "crv", "The elliptic `curve` to use for EC and OKP key types.\nOptions are P256, P384, P521 or Ed25519 on OKP")
 	flags.Int("size", 3072, "The key size for an RSA key")
 	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
 	flags.Var(protectionLevel, "protection-level", "The protection `level` used on some Cloud KMSs.\nOptions are SOFTWARE or HSM")
+	flags.Var(pinPolicy, "pin-policy", "The pin `policy` used on YubiKey KMS.\nOptions are NEVER, ALWAYS or ONCE")
+	flags.Var(touchPolicy, "touch-policy", "The touch `policy` used on YubiKey KMS.\nOptions are NEVER, ALWAYS or CACHED")
 	flags.Bool("pss", false, "Use RSA-PSS signature scheme instead of PKCS #1")
 	flags.Bool("extractable", false, "Mark the new key as extractable")
 	flags.Bool("json", false, "Show the output using JSON")
