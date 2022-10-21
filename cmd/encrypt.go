@@ -45,9 +45,10 @@ size of the key minus a number of bytes that depend on the scheme used.
 
 All KMSs support encryption because only the public key is used. But the support
 for decryption is currently limited to YubiKey and PKCS #11 KMSs. The device
-also limits the scheme support. YubiKeys only supports PKCS #1 v1.5 and PKCS #11
-supported schemes depend on the device itself. A YubiHSM2, for example, supports
-both schemes.`,
+also limits the scheme support. YubiKeys only supports PKCS #1 v1.5 through PIV,
+but it supports RSA-OAEP using its PKCS #11 module (YKCS11). PKCS #11 modules
+supported schemes depend on the device, but they generally support both. A
+YubiHSM2 can use both PKCS #1 v.1.5 and RSA-OAEP.`,
 	Example: `  # Encrypts a password given by stdin using RSA PKCS#1 v1.5:
   echo password | step-kms-plugin encrypt yubikey:slot-id=82
 

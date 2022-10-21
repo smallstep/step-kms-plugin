@@ -41,9 +41,10 @@ This command supports decrypting a short encrypted message with RSA and the
 padding scheme from PKCS #1 v1.5 or using RSA-OAEP.
 
 The support for decryption is currently limited to YubiKey and PKCS #11 KMSs.
-The device also limits the scheme support. YubiKeys only supports PKCS #1 v1.5
-and PKCS #11 supported schemes depend on the device itself. A YubiHSM2, for
-example, supports both schemes.`,
+The device might also limit the scheme support. YubiKeys only supports PKCS #1
+v1.5 through PIV, but it supports RSA-OAEP using its PKCS #11 module (YKCS11).
+PKCS #11 modules supported schemes depend on the device, but they generally
+support both. A YubiHSM2 can use both PKCS #1 v.1.5 and RSA-OAEP.`,
 	Example: `  # Decrypts a input given by stdin using RSA PKCS#1 v1.5:
   cat message.b64 | step-kms-plugin decrypt yubikey:slot-id=82
 
