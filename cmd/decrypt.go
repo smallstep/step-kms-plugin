@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/rand"
@@ -33,13 +34,26 @@ import (
 // decryptCmd represents the decrypt command
 var decryptCmd = &cobra.Command{
 	Use:   "decrypt <uri>",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "decrypt the given input with an RSA key",
+	Long: `Decrypts the given input with an RSA private key present in a KMS.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This command supports decrypting a short encrypted message with RSA and the
+padding scheme from PKCS #1 v1.5 or using RSA-OAEP.
+
+The support for decryption is currently limited to YubiKey and PKCS #11 KMSs.
+The device also limits the scheme support. YubiKeys only supports PKCS #1 v1.5
+and PKCS #11 supported schemes depend on the device itself. A YubiHSM2, for
+example, supports both schemes.`,
+	Example: `  # Decrypts a input given by stdin using RSA PKCS#1 v1.5:
+  cat message.b64 | step-kms-plugin decrypt yubikey:slot-id=82
+
+  # Decryptss a given file using RSA-OAEP:
+  step-kms-plugin decrypt --oaep --in message.b64 \
+    --kms 'pkcs11:module-path=/usr/local/lib/pkcs11/yubihsm_pkcs11.dylib;token=YubiHSM?pin-value=0001password' \
+	'pkcs11:object=my-rsa-key'
+
+  # Decrypts a given file encoded in hexadecimal format from a file in disk:
+  step-kms-plugin decrypt --format hex --in message.hex --kms softkms: rsa.priv`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if l := len(args); l != 1 {
 			return showErrUsage(cmd)
@@ -79,6 +93,7 @@ to quickly create a Cobra application.`,
 
 		switch format {
 		case "hex":
+			src = bytes.TrimSpace(src)
 			size := hex.DecodedLen(len(src))
 			data = make([]byte, size)
 			n, err := hex.Decode(data, src)
@@ -112,7 +127,7 @@ to quickly create a Cobra application.`,
 		}
 
 		d, err := dec.CreateDecrypter(&apiv1.CreateDecrypterRequest{
-			DecryptionKey: kuri,
+			DecryptionKey: args[0],
 		})
 		if err != nil {
 			return err

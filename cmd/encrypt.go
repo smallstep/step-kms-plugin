@@ -36,13 +36,28 @@ const DefaultOEAPLabel = "step-kms-plugin/v1/oaep"
 // encryptCmd represents the encrypt command
 var encryptCmd = &cobra.Command{
 	Use:   "encrypt <uri>",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "encrypt a given input with an RSA public key",
+	Long: `Encrypts a given input with an RSA public key. 
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This command supports encrypting a short message with RSA and the padding scheme
+from PKCS #1 v1.5 or using RSA-OAEP. The messages must not be longer than the
+size of the key minus a number of bytes that depend on the scheme used.
+
+All KMSs support encryption because only the public key is used. But the support
+for decryption is currently limited to YubiKey and PKCS #11 KMSs. The device
+also limits the scheme support. YubiKeys only supports PKCS #1 v1.5 and PKCS #11
+supported schemes depend on the device itself. A YubiHSM2, for example, supports
+both schemes.`,
+	Example: `  # Encrypts a password given by stdin using RSA PKCS#1 v1.5:
+  echo password | step-kms-plugin encrypt yubikey:slot-id=82
+
+  # Encrypts a given file using RSA-OAEP:
+  step-kms-plugin encrypt --oaep --in message.txt \
+    --kms 'pkcs11:module-path=/usr/local/lib/pkcs11/yubihsm_pkcs11.dylib;token=YubiHSM?pin-value=0001password' \
+	'pkcs11:object=my-rsa-key'
+
+  # Encrypts a given file using a key in disk using the hexadecimal format:
+  step-kms-plugin encrypt --format hex --in message.txt --kms softkms: rsa.pub`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if l := len(args); l != 1 {
 			return showErrUsage(cmd)
@@ -90,7 +105,7 @@ to quickly create a Cobra application.`,
 		defer km.Close()
 
 		key, err := km.GetPublicKey(&apiv1.GetPublicKeyRequest{
-			Name: kuri,
+			Name: args[0],
 		})
 		if err != nil {
 			return fmt.Errorf("failed to get the public key: %w", err)
