@@ -15,9 +15,13 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"syscall"
 
 	"github.com/spf13/cobra"
+	"go.step.sm/crypto/pemutil"
+	"golang.org/x/term"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -58,4 +62,11 @@ func showErrUsage(cmd *cobra.Command) error {
 func init() {
 	flags := rootCmd.PersistentFlags()
 	flags.String("kms", "", "The `uri` with the kms configuration to use")
+
+	// Define a password reader
+	pemutil.PromptPassword = func(s string) ([]byte, error) {
+		fmt.Fprint(os.Stderr, s+": ")
+		defer fmt.Fprintln(os.Stderr)
+		return term.ReadPassword(int(syscall.Stderr))
+	}
 }
