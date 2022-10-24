@@ -14,7 +14,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"io/fs"
 
@@ -68,7 +67,7 @@ var keyCmd = &cobra.Command{
 			kuri = args[0]
 		}
 
-		fsys, err := kms.KeyFS(context.TODO(), kuri)
+		fsys, err := kms.KeyFS(cmd.Context(), kuri)
 		if err != nil {
 			return err
 		}

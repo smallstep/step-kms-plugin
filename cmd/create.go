@@ -14,7 +14,6 @@
 package cmd
 
 import (
-	"context"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -119,7 +118,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		}
 
 		cmd.SilenceUsage = true
-		km, err := kms.New(context.Background(), apiv1.Options{
+		km, err := kms.New(cmd.Context(), apiv1.Options{
 			URI: kuri,
 		})
 		if err != nil {

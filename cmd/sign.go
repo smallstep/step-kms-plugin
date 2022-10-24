@@ -14,7 +14,6 @@
 package cmd
 
 import (
-	"context"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
@@ -83,7 +82,7 @@ digest of the data file for you.`,
 			kuri = args[0]
 		}
 
-		km, err := kms.New(context.Background(), apiv1.Options{
+		km, err := kms.New(cmd.Context(), apiv1.Options{
 			URI: kuri,
 		})
 		if err != nil {

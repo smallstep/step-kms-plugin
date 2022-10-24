@@ -14,7 +14,6 @@
 package cmd
 
 import (
-	"context"
 	"encoding/pem"
 	"fmt"
 	"io/fs"
@@ -55,7 +54,7 @@ var certificateCmd = &cobra.Command{
 
 		// Read a certificate using the CertFS.
 		if certFile == "" {
-			fsys, err := kms.CertFS(context.TODO(), kuri)
+			fsys, err := kms.CertFS(cmd.Context(), kuri)
 			if err != nil {
 				return err
 			}
@@ -75,7 +74,7 @@ var certificateCmd = &cobra.Command{
 			return err
 		}
 
-		km, err := kms.New(context.Background(), apiv1.Options{
+		km, err := kms.New(cmd.Context(), apiv1.Options{
 			URI: kuri,
 		})
 		if err != nil {

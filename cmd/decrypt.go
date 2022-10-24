@@ -15,7 +15,6 @@ package cmd
 
 import (
 	"bytes"
-	"context"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -114,7 +113,7 @@ support both. A YubiHSM2 can use both PKCS #1 v.1.5 and RSA-OAEP.`,
 			data = data[:n]
 		}
 
-		km, err := kms.New(context.Background(), apiv1.Options{
+		km, err := kms.New(cmd.Context(), apiv1.Options{
 			URI: kuri,
 		})
 		if err != nil {
