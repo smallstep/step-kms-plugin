@@ -36,7 +36,7 @@ var decryptCmd = &cobra.Command{
 	Short: "decrypt the given input with an RSA key",
 	Long: `Decrypts the given input with an RSA private key present in a KMS.
 
-This command supports decrypting a short encrypted message with RSA and the
+This command supports decrypting a short encrypted message (eg. a password) with RSA and the
 padding scheme from PKCS #1 v1.5 or using RSA-OAEP.
 
 The support for decryption is currently limited to YubiKey and PKCS #11 KMSs.
