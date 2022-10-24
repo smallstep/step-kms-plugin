@@ -65,7 +65,10 @@ func init() {
 
 	// Define a password reader
 	pemutil.PromptPassword = func(s string) ([]byte, error) {
-		fmt.Fprint(os.Stderr, s+": ")
+		if s[len(s)-1] != ':' {
+			s += ":"
+		}
+		fmt.Fprint(os.Stderr, s+" ")
 		defer fmt.Fprintln(os.Stderr)
 		return term.ReadPassword(syscall.Stderr)
 	}
