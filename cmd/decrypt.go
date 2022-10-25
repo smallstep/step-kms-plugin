@@ -36,14 +36,13 @@ var decryptCmd = &cobra.Command{
 	Short: "decrypt the given input with an RSA key",
 	Long: `Decrypts the given input with an RSA private key present in a KMS.
 
-This command supports decrypting a short encrypted message (eg. a password) with RSA and the
-padding scheme from PKCS #1 v1.5 or using RSA-OAEP.
+This command supports decrypting a short encrypted message (eg. a password) with
+RSA and the padding scheme from PKCS #1 v1.5 or using RSA-OAEP.
 
-The support for decryption is currently limited to YubiKey and PKCS #11 KMSs.
-The device might also limit the scheme support. YubiKeys only supports PKCS #1
-v1.5 through PIV, but it supports RSA-OAEP using its PKCS #11 module (YKCS11).
-PKCS #11 modules supported schemes depend on the device, but they generally
-support both. A YubiHSM2 can use both PKCS #1 v.1.5 and RSA-OAEP.`,
+Not all devices support both schemes. YubiKeys do: they support PKCS #1 v1.5 via
+the PIV application, and they support RSA-OAEP via the YubiKey PKCS #11 library,
+YKCS11. Other PKCS #11 devices (including YubiHSM2) will generally support both
+PKCS #1 v.1.5 and RSA-OAEP.`,
 	Example: `  # Decrypts a input given by stdin using RSA PKCS#1 v1.5:
   cat message.b64 | step-kms-plugin decrypt yubikey:slot-id=82
 

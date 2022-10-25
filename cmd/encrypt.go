@@ -38,15 +38,17 @@ var encryptCmd = &cobra.Command{
 	Short: "encrypt a given input with an RSA public key",
 	Long: `Encrypts a given input with an RSA public key. 
 
-This command supports encrypting a short message (eg. a password) with RSA and the padding scheme
-from PKCS #1 v1.5 or using RSA-OAEP. The messages must not be longer than the
-size of the key minus a number of bytes that depend on the scheme used.
+This command supports encrypting a short message (eg. a password) with RSA and
+the padding scheme from PKCS #1 v1.5 or using RSA-OAEP. The messages must not be
+longer than the size of the key minus a number of bytes that depend on the
+scheme used.
 
-All KMSs support encryption, because only the public key is used. Support
-for decryption is currently limited to YubiKey and some PKCS #11 KMSs. 
-Not all devices support both schemes. YubiKeys do: they support PKCS #1 v1.5 via the PIV application,
-and they support RSA-OAEP via the YubiKey PKCS #11 library, YKCS11.
-Other PKCS #11 devices (including YubiHSM2) will generally support both PKCS #1 v.1.5 and RSA-OAEP.`,
+All KMSs support encryption, because only the public key is used. Support for
+decryption is currently limited to YubiKey and some PKCS #11 KMSs. Not all
+devices support both schemes. YubiKeys do: they support PKCS #1 v1.5 via the PIV
+application, and they support RSA-OAEP via the YubiKey PKCS #11 library, YKCS11.
+Other PKCS #11 devices (including YubiHSM2) will generally support both
+PKCS #1 v.1.5 and RSA-OAEP.`,
 	Example: `  # Encrypts a password given by stdin using RSA PKCS#1 v1.5:
   echo password | step-kms-plugin encrypt yubikey:slot-id=82
 
