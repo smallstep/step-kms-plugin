@@ -72,6 +72,7 @@ var keyCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		defer fsys.Close()
 
 		b, err := fs.ReadFile(fsys, args[0])
 		if err != nil {
