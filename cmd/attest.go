@@ -14,17 +14,17 @@
 package cmd
 
 import (
-	"context"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
 
-	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/pemutil"
+
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 )
 
 // attestCmd represents the attest command
@@ -47,7 +47,7 @@ Currently this command is only supported on YubiKeys.`,
 			kuri = args[0]
 		}
 
-		km, err := kms.New(context.Background(), apiv1.Options{
+		km, err := kms.New(cmd.Context(), apiv1.Options{
 			URI: kuri,
 		})
 		if err != nil {

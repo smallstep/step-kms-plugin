@@ -14,13 +14,13 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"io/fs"
 
-	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
+
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 )
 
 // keyCmd represents the key command
@@ -68,7 +68,7 @@ var keyCmd = &cobra.Command{
 			kuri = args[0]
 		}
 
-		fsys, err := kms.KeyFS(context.TODO(), kuri)
+		fsys, err := kms.KeyFS(cmd.Context(), kuri)
 		if err != nil {
 			return err
 		}

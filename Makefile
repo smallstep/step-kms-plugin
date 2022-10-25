@@ -92,7 +92,7 @@ test:
 #########################################
 
 fmt:
-	$Q goimports -l -w $(SRC)
+	$Q goimports --local github.com/smallstep/step-kms-plugin  -l -w $(SRC)
 
 lint: SHELL:=/bin/bash
 lint:
