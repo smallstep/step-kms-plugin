@@ -26,13 +26,14 @@ import (
 	"io"
 	"os"
 
-	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/sshutil"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 )
 
 // signCmd represents the sign command

@@ -17,9 +17,10 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
+
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 )
 
 // keyCmd represents the key command
@@ -71,6 +72,7 @@ var keyCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		defer fsys.Close()
 
 		b, err := fs.ReadFile(fsys, args[0])
 		if err != nil {

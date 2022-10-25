@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/pemutil"
+
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 )
 
 // createCmd represents the create command

@@ -23,10 +23,11 @@ import (
 	"io"
 	"os"
 
-	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
+
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 )
 
 // DefaultOEAPLabel is the label used when OAEP is used.

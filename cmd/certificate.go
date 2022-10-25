@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/pemutil"
+
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 )
 
 // certificateCmd represents the certificate command
@@ -58,6 +59,7 @@ var certificateCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
+			defer fsys.Close()
 
 			b, err := fs.ReadFile(fsys, args[0])
 			if err != nil {
