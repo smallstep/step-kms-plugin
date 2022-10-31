@@ -3,7 +3,7 @@ module github.com/smallstep/step-kms-plugin
 go 1.18
 
 require (
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	go.step.sm/crypto v0.22.0
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
