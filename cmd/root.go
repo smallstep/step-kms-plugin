@@ -15,13 +15,12 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"syscall"
 
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/pemutil"
-	"golang.org/x/term"
+
+	"github.com/smallstep/step-kms-plugin/internal/termutil"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -68,8 +67,6 @@ func init() {
 		if s[len(s)-1] != ':' {
 			s += ":"
 		}
-		fmt.Fprint(os.Stderr, s+" ")
-		defer fmt.Fprintln(os.Stderr)
-		return term.ReadPassword(syscall.Stderr)
+		return termutil.ReadPassword(s)
 	}
 }
