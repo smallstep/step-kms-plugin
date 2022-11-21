@@ -7,7 +7,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	go.step.sm/crypto v0.23.1
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
-	golang.org/x/term v0.1.0
+	golang.org/x/term v0.2.0
 )
 
 require (
@@ -56,7 +56,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.1.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	google.golang.org/api v0.102.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
