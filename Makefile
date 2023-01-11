@@ -1,6 +1,6 @@
 PKG?=github.com/smallstep/step-kms-plugin
 BINNAME?=step-kms-plugin
-GOLANG_CROSS_VERSION?=v1.19.3
+GOLANG_CROSS_VERSION?=v1.19.5
 
 # Set V to 1 for verbose output from the Makefile
 Q=$(if $V,,@)
