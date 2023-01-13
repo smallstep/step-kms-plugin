@@ -53,18 +53,18 @@ or a binary data filename via the --in flag.
 
 If you use the --in flag with an EC or RSA key, this command will generate the
 digest of the data file for you.`,
-	Example: `  # Signs the given file using a key in the PKCS #11 module.
-  step-kms-plugin --in data.bin \
+	Example: `  # Sign the given file using a key in the PKCS #11 module.
+  step-kms-plugin sign --in data.bin \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
   'pkcs11:id=1000'
 
-  # Signs a digest using a key in Google's Cloud KMS.
-  step-kms-plugin 1b8de4254213f8c3f784b3da4611eaeec1e720e74b4357029f8271b4ef9e1c2c \
+  # Sign a digest using a key in Google's Cloud KMS.
+  step-kms-plugin sign 1b8de4254213f8c3f784b3da4611eaeec1e720e74b4357029f8271b4ef9e1c2c \
   --kms cloudkms: \
   projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key/cryptoKeyVersions/1
 
-  # Signs and verify using RSA PKCS #1 with SHA512:
-  step-kms-plugin --in data.bin --verify --alg SHA512 \
+  # Sign and verify using RSA PKCS #1 with SHA512:
+  step-kms-plugin sign --in data.bin --verify --alg SHA512 \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
   'pkcs11:object=my-rsa-key'
 
@@ -72,7 +72,7 @@ digest of the data file for you.`,
   step-kms-plugin sign --in data.bin sshagentkms:user@localhost
 
   # Sign the header and payload of a JWT to produce the signature:
-  step-kms-plugin --in data.jwt --format jws \
+  step-kms-plugin sign --in data.jwt --format jws \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
   'pkcs11:id=1000`,
 	RunE: func(cmd *cobra.Command, args []string) error {
