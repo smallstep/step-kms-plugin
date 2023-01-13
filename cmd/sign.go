@@ -22,14 +22,18 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/sshutil"
+	"golang.org/x/crypto/cryptobyte"
+	"golang.org/x/crypto/cryptobyte/asn1"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 
@@ -49,23 +53,28 @@ or a binary data filename via the --in flag.
 
 If you use the --in flag with an EC or RSA key, this command will generate the
 digest of the data file for you.`,
-	Example: `  # Signs the given file using a key in the PKCS #11 module.
-  step-kms-plugin --in data.bin \
+	Example: `  # Sign the given file using a key in the PKCS #11 module.
+  step-kms-plugin sign --in data.bin \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
   'pkcs11:id=1000'
 
-  # Signs a digest using a key in Google's Cloud KMS.
-  step-kms-plugin 1b8de4254213f8c3f784b3da4611eaeec1e720e74b4357029f8271b4ef9e1c2c \
+  # Sign a digest using a key in Google's Cloud KMS.
+  step-kms-plugin sign 1b8de4254213f8c3f784b3da4611eaeec1e720e74b4357029f8271b4ef9e1c2c \
   --kms cloudkms: \
   projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key/cryptoKeyVersions/1
 
-  # Signs and verify using RSA PKCS #1 with SHA512:
-  step-kms-plugin --in data.bin --verify --alg SHA512 \
+  # Sign and verify using RSA PKCS #1 with SHA512:
+  step-kms-plugin sign --in data.bin --verify --alg SHA512 \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
   'pkcs11:object=my-rsa-key'
 
-  # Sign a file using an Ed25519 key in the ssh-agent :
-  step-kms-plugin sign --in data.bin sshagentkms:user@localhost`,
+  # Sign a file using an Ed25519 key in the ssh-agent:
+  step-kms-plugin sign --in data.bin sshagentkms:user@localhost
+
+  # Sign the header and payload of a JWT to produce the signature:
+  step-kms-plugin sign --in data.jwt --format jws \
+  --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
+  'pkcs11:id=1000`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if l := len(args); l != 1 && l != 2 {
 			return showErrUsage(cmd)
@@ -150,6 +159,11 @@ digest of the data file for you.`,
 		switch format {
 		case "hex":
 			fmt.Println(hex.EncodeToString(sig))
+		case "jws":
+			if sig, err = jwsSignature(sig, pub); err != nil {
+				return err
+			}
+			fmt.Println(base64.RawURLEncoding.EncodeToString(sig))
 		case "raw":
 			os.Stdout.Write(sig)
 		default:
@@ -169,6 +183,44 @@ func signsRawInput(pub crypto.PublicKey) bool {
 	default:
 		return false
 	}
+}
+
+func jwsSignature(sig []byte, pub crypto.PublicKey) ([]byte, error) {
+	ec, ok := pub.(*ecdsa.PublicKey)
+	if !ok {
+		return sig, nil
+	}
+
+	var r, s big.Int
+	var inner cryptobyte.String
+	input := cryptobyte.String(sig)
+	if !input.ReadASN1(&inner, asn1.SEQUENCE) ||
+		!input.Empty() ||
+		!inner.ReadASN1Integer(&r) ||
+		!inner.ReadASN1Integer(&s) ||
+		!inner.Empty() {
+		return nil, errors.New("failed decoding ASN.1 signature")
+	}
+
+	curveBits := ec.Curve.Params().BitSize
+	keyBytes := curveBits / 8
+	if curveBits%8 > 0 {
+		keyBytes++
+	}
+
+	// We serialize the outputs (r and s) into big-endian byte arrays and pad
+	// them with zeros on the left to make sure the sizes work out. Both arrays
+	// must be keyBytes long, and the output must be 2*keyBytes long.
+	rBytes := r.Bytes()
+	rBytesPadded := make([]byte, keyBytes)
+	copy(rBytesPadded[keyBytes-len(rBytes):], rBytes)
+
+	sBytes := s.Bytes()
+	sBytesPadded := make([]byte, keyBytes)
+	copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
+
+	//nolint:makezero // we actually want the 0 bytes padding
+	return append(rBytesPadded, sBytesPadded...), nil
 }
 
 func getSignerOptions(pub crypto.PublicKey, alg string, pss bool) (crypto.SignerOpts, error) {
@@ -273,11 +325,11 @@ func init() {
 	flags.SortFlags = false
 
 	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
-	format := flagutil.LowerValue("format", []string{"base64", "hex", "raw"}, "base64")
+	format := flagutil.LowerValue("format", []string{"base64", "hex", "jws", "raw"}, "base64")
 
 	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
 	flags.Bool("pss", false, "Use RSA-PSS signature scheme instead of RSA PKCS #1")
-	flags.Var(format, "format", "The `format` to print the signature.\nOptions are base64, hex, or raw")
+	flags.Var(format, "format", "The `format` to print the signature.\nOptions are base64, hex, jws, or raw")
 	flags.String("in", "", "The `file` to sign. Required for Ed25519 keys.")
 	flags.Bool("verify", false, "Verify the signature with the public key")
 }
