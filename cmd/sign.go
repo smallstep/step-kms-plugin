@@ -219,6 +219,7 @@ func jwsSignature(sig []byte, pub crypto.PublicKey) ([]byte, error) {
 	sBytesPadded := make([]byte, keyBytes)
 	copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
 
+	//nolint:makezero // we actually want the 0 bytes padding
 	return append(rBytesPadded, sBytesPadded...), nil
 }
 
