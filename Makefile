@@ -44,21 +44,21 @@ VERSION ?= $(shell [ -d .git ] && git describe --tags --always --dirty="-dev")
 endif
 
 VERSION := $(shell echo $(VERSION) | sed 's/^v//')
+DATE    := $(shell date -u '+%Y-%m-%d %H:%M UTC')
 
 ifdef V
 $(info    GITHUB_REF is $(GITHUB_REF))
 $(info    VERSION is $(VERSION))
+$(info    DATE is $(DATE))
 endif
 
 #########################################
 # Build
 #########################################
 
-DATE    := $(shell date -u '+%Y-%m-%d %H:%M UTC')
-LDFLAGS := -ldflags='-w -X "cmd.Version=$(VERSION)" -X "cmd.BuildTime=$(DATE)"'
+LDFLAGS := -ldflags='-s -w -X "$(PKG)/cmd.Version=$(VERSION)" -X "$(PKG)/cmd.ReleaseDate=$(DATE)"'
 
 build:
-	$Q mkdir -p $(@D)
 	$Q go build -v -o $(PREFIX)bin/$(BINNAME) $(LDFLAGS) $(PKG)
 	@echo "Build Complete!"
 
