@@ -36,6 +36,10 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=${VERSION}" >> ${GITHUB_OUTPUT}
           echo "DOCKER_TAGS=${{ env.DOCKER_IMAGE }}:${VERSION}" >> ${GITHUB_ENV}
+      - name: Add Latest Tag
+        if: steps.is_prerelease.outputs.IS_PRERELEASE == 'false'
+        run: |
+          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},${{ env.DOCKER_IMAGE }}:latest" >> ${GITHUB_ENV}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -46,28 +50,16 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
-      - name: Add Latest Tag
-        if: steps.is_prerelease.outputs.IS_PRERELEASE == 'false'
-        run: |
-          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},${{ env.DOCKER_IMAGE }}:latest" >> ${GITHUB_ENV}
 
   goreleaser:
     name: Upload Assets to Github w/ goreleaser
     runs-on: ubuntu-latest
     needs: create_release
     steps:
-      - name: Install dependencies
-        run: sudo apt update && sudo apt install -y libpcsclite-dev
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.19'
-      - name: release dry run
-        run: make release-dry-run
       - name: setup release environment
         run: |-
           echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' > .release-env
