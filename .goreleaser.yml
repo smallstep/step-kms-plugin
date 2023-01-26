@@ -19,7 +19,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+      - -s -w -X {{.ModulePath}}/cmd.Version={{.Version}} -X {{.ModulePath}}/cmd.ReleaseDate={{.Date}}
   - id: linux-arm64
     main: ./main.go
     binary: step-kms-plugin
@@ -33,7 +33,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+      - -s -w -X {{.ModulePath}}/cmd.Version={{.Version}} -X {{.ModulePath}}/cmd.ReleaseDate={{.Date}}
   - id: darwin-amd64
     main: ./main.go
     binary: step-kms-plugin
@@ -47,7 +47,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+      - -s -w -X {{.ModulePath}}/cmd.Version={{.Version}} -X {{.ModulePath}}/cmd.ReleaseDate={{.Date}}
   - id: darwin-arm64
     main: ./main.go
     binary: step-kms-plugin
@@ -61,7 +61,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+      - -s -w -X {{.ModulePath}}/cmd.Version={{.Version}} -X {{.ModulePath}}/cmd.ReleaseDate={{.Date}}
   - id: windows-amd64
     main: ./main.go
     binary: step-kms-plugin
@@ -75,7 +75,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X cmd.Version={{.Version}} -X cmd.BuildTime={{.Date}}
+      - -s -w -X {{.ModulePath}}/cmd.Version={{.Version}} -X {{.ModulePath}}/cmd.ReleaseDate={{.Date}}
 
 archives:
   - id: step-kms-plugin
