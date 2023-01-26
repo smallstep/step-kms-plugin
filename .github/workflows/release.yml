@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKER_IMAGE: smallstep/step-kms-plugin
+      DOCKER_IMAGE_CLOUD: smallstep/step-kms-plugin-cloud
     outputs:
       version: ${{ steps.extract-tag.outputs.VERSION }}
       is_prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
@@ -36,10 +37,12 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=${VERSION}" >> ${GITHUB_OUTPUT}
           echo "DOCKER_TAGS=${{ env.DOCKER_IMAGE }}:${VERSION}" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE_CLOUD }}:${VERSION}" >> ${GITHUB_ENV}
       - name: Add Latest Tag
         if: steps.is_prerelease.outputs.IS_PRERELEASE == 'false'
         run: |
           echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},${{ env.DOCKER_IMAGE }}:latest" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_TAGS_CLOUD }},${{ env.DOCKER_IMAGE_CLOUD }}:latest" >> ${GITHUB_ENV}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -89,7 +92,7 @@ jobs:
     uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
     with:
       platforms: linux/amd64,linux/arm64
-      tags: ${{ needs.create_release.outputs.docker_tags }}
+      tags: ${{ needs.create_release.outputs.docker_tags_cloud }}
       docker_image: smallstep/step-kms-plugin-cloud
       docker_file: docker/Dockerfile.cloud
     secrets: inherit
