@@ -105,6 +105,14 @@ lint:
 # Release
 #########################################
 
+release-dev:
+	$Q @docker run -it --rm --privileged -e CGO_ENABLED=1 \
+		--entrypoint /bin/bash \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PKG) \
+		-w /go/src/$(PKG) \
+		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION}
+
 release-dry-run:
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
@@ -127,7 +135,7 @@ release:
 		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
 		release --rm-dist
 
-.PHONY: release-dry-run release
+.PHONY: release-dev release-dry-run release
 
 #########################################
 # Install
