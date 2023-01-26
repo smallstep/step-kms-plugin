@@ -79,3 +79,17 @@ jobs:
       docker_image: smallstep/step-kms-plugin
       docker_file: docker/Dockerfile
     secrets: inherit
+
+  build_upload_docker_cloud:
+    name: Build & Upload Cloud Only Docker Images
+    needs: create_release
+    permissions:
+      id-token: write
+      contents: write
+    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+    with:
+      platforms: linux/amd64,linux/arm64
+      tags: ${{ needs.create_release.outputs.docker_tags }}
+      docker_image: smallstep/step-kms-plugin-cloud
+      docker_file: docker/Dockerfile.cloud
+    secrets: inherit
