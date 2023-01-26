@@ -122,6 +122,13 @@ nfpms:
       - src: completions/zsh_completion
         dst: /usr/share/zsh/site-functions/_step-kms-plugin
         packager: rpm
+    overrides:
+      deb:
+        dependencies:
+          - libpcsclite1
+      rpm:
+        dependencies:
+          - pcsc-lite-libs
 
 checksum:
   name_template: "checksums.txt"
