@@ -22,6 +22,7 @@ jobs:
       version: ${{ steps.extract-tag.outputs.VERSION }}
       is_prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
       docker_tags: ${{ env.DOCKER_TAGS }}
+      docker_tags_cloud: ${{ env.DOCKER_TAGS_CLOUD }}
     steps:
       - name: Is Pre-release
         id: is_prerelease
