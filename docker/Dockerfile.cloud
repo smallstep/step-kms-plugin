@@ -1,11 +1,27 @@
-FROM golang:alpine AS builder
+# On multiplatform builds, cache holds the source code and all the Go modules.
+FROM --platform=$BUILDPLATFORM golang:alpine AS cache
 
+# Use go.mod go.sum only to avoid invalidating cache if the source code changes
+# on local development.
 WORKDIR /src
+COPY go.mod go.sum /src/
+RUN go mod download
+
+# Copy all the source code.
 COPY . .
 
+# The builder will be platform specific.
+FROM golang:alpine AS builder
+
+COPY --from=cache /go/pkg /go/pkg
+COPY --from=cache /src /src
+
 RUN apk add --no-cache git make
+
+WORKDIR /src
 RUN make V=1 CGO_ENABLED=0 build
 
+# step-cli will be the base image.
 FROM smallstep/step-cli:latest
 
 COPY --from=builder /src/bin/step-kms-plugin /usr/local/bin/step-kms-plugin
