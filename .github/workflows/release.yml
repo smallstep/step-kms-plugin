@@ -78,7 +78,7 @@ jobs:
       contents: write
     uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
     with:
-      platforms: linux/amd64,linux/arm64
+      platforms: linux/amd64,linux/arm64,linux/386,linux/arm
       tags: ${{ needs.create_release.outputs.docker_tags }}
       docker_image: smallstep/step-kms-plugin
       docker_file: docker/Dockerfile
@@ -92,7 +92,7 @@ jobs:
       contents: write
     uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
     with:
-      platforms: linux/amd64,linux/arm64
+      platforms: linux/amd64,linux/arm64,linux/386,linux/arm
       tags: ${{ needs.create_release.outputs.docker_tags_cloud }}
       docker_image: smallstep/step-kms-plugin-cloud
       docker_file: docker/Dockerfile.cloud
