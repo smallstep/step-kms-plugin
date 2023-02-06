@@ -3,6 +3,7 @@ module github.com/smallstep/step-kms-plugin
 go 1.18
 
 require (
+	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	go.step.sm/crypto v0.23.2
@@ -53,6 +54,7 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/thales-e-security/pool v0.0.2 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect

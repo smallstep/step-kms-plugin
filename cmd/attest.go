@@ -14,11 +14,22 @@
 package cmd
 
 import (
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
@@ -31,17 +42,30 @@ import (
 var attestCmd = &cobra.Command{
 	Use:   "attest <uri>",
 	Short: "create an attestation certificate",
-	Long: `This command, if the KMS supports it, it prints an attestation certificate or an endorsement key.
+	Long: `Print an attestation certificate, an endorsement key, or if the "--format" flag
+is set, an attestation object. Currently this command is only supported on
+YubiKeys.
 
-Currently this command is only supported on YubiKeys.`,
+An attestation object can be used to resolve an ACME device-attest-01 challenge.
+To pass this challenge the client needs to show prove of possession of a private
+key by signing the ACME key authorization, the format is defined by RFC 8555 as
+a string that concatenates the token for the challenge with a key fingerprint
+separated by a "." character:
+
+  keyAuthorization = token || '.' || base64url(Thumbprint(accountKey))`,
 	Example: `  # Get the attestation certificate from a YubiKey:
-  step-kms-plugin attest yubikey:slot-id=9c`,
+  step-kms-plugin attest yubikey:slot-id=9c
+
+  # Create an attestation object used in an ACME device-attest-01 flow:
+  echo -n <token>.<fingerprint> | step-kms-plugin attest --format step yubikey:slot-id=9c`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showErrUsage(cmd)
 		}
 
 		flags := cmd.Flags()
+		format := flagutil.MustString(flags, "format")
+		in := flagutil.MustString(flags, "in")
 		kuri := flagutil.MustString(flags, "kms")
 		if kuri == "" {
 			kuri = args[0]
@@ -68,6 +92,23 @@ Currently this command is only supported on YubiKeys.`,
 		}
 
 		switch {
+		case format != "":
+			data, err := getAttestationData(in)
+			if err != nil {
+				return err
+			}
+			signer, err := km.CreateSigner(&apiv1.CreateSignerRequest{
+				SigningKey: args[0],
+			})
+			if err != nil {
+				return fmt.Errorf("failed to get a signer: %w", err)
+			}
+			var certs []*x509.Certificate
+			if resp.Certificate != nil {
+				certs = append([]*x509.Certificate{}, resp.Certificate)
+				certs = append(certs, resp.CertificateChain...)
+			}
+			return printAttestationObject(format, certs, signer, data)
 		case resp.Certificate != nil:
 			if err := pem.Encode(os.Stdout, &pem.Block{
 				Type:  "CERTIFICATE",
@@ -96,7 +137,101 @@ Currently this command is only supported on YubiKeys.`,
 	},
 }
 
+type attestationObject struct {
+	Format       string                 `json:"fmt"`
+	AttStatement map[string]interface{} `json:"attStmt,omitempty"`
+}
+
+func getAttestationData(in string) ([]byte, error) {
+	if in != "" {
+		return os.ReadFile(in)
+	}
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if (fi.Mode() & os.ModeCharDevice) == 0 {
+		return ioutil.ReadAll(os.Stdin)
+	} else {
+		fmt.Println("Type data to sign and press Ctrl+D to finish:")
+		return ioutil.ReadAll(os.Stdin)
+	}
+}
+
+func printAttestationObject(format string, certs []*x509.Certificate, signer crypto.Signer, data []byte) error {
+	var alg int64
+	var digest []byte
+	var opts crypto.SignerOpts
+	switch k := signer.Public().(type) {
+	case *ecdsa.PublicKey:
+		if k.Curve != elliptic.P256() {
+			return fmt.Errorf("unsupported elliptic curve %s", k.Curve)
+		}
+		alg = -7 // ES256
+		opts = crypto.SHA256
+		sum := sha256.Sum256([]byte(data))
+		digest = sum[:]
+	case *rsa.PublicKey:
+		// TODO(mariano): support for PS256 (-37)
+		alg = -257 // RS256
+		opts = crypto.SHA256
+		sum := sha256.Sum256([]byte(data))
+		digest = sum[:]
+	case ed25519.PublicKey:
+		alg = -8 // EdDSA
+		opts = crypto.Hash(0)
+		digest = []byte(data)
+	default:
+		return fmt.Errorf("unsupported public key type %T", k)
+	}
+
+	// Sign proves possession of private key. Per recommendation at
+	// https://w3c.github.io/webauthn/#sctn-signature-attestation-types, we use
+	// CBOR to encode the signature.
+	sig, err := signer.Sign(rand.Reader, digest, opts)
+	if err != nil {
+		return fmt.Errorf("failed to sign key authorization: %w", err)
+	}
+	sig, err = cbor.Marshal(sig)
+	if err != nil {
+		return fmt.Errorf("failed marshaling signature: %w", err)
+	}
+
+	stmt := map[string]interface{}{
+		"alg": alg,
+		"sig": sig,
+	}
+
+	if len(certs) > 0 {
+		x5c := make([][]byte, len(certs))
+		for i, c := range certs {
+			x5c[i] = c.Raw
+		}
+		stmt["x5c"] = x5c
+	}
+
+	obj := attestationObject{
+		Format:       format,
+		AttStatement: stmt,
+	}
+
+	b, err := cbor.Marshal(obj)
+	if err != nil {
+		return fmt.Errorf("failed marshaling attestation object: %w", err)
+	}
+
+	fmt.Println(base64.RawURLEncoding.EncodeToString(b))
+	return nil
+}
+
 func init() {
 	rootCmd.AddCommand(attestCmd)
 	attestCmd.SilenceUsage = true
+
+	flags := attestCmd.Flags()
+	flags.SortFlags = false
+
+	format := flagutil.LowerValue("format", []string{"", "step", "packed"}, "")
+	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step or packed")
+	flags.String("in", "", "The `file` to sign with an attestation format.")
 }
