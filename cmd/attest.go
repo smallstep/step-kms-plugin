@@ -26,7 +26,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/fxamacker/cbor/v2"
@@ -151,11 +151,10 @@ func getAttestationData(in string) ([]byte, error) {
 		return nil, err
 	}
 	if (fi.Mode() & os.ModeCharDevice) == 0 {
-		return ioutil.ReadAll(os.Stdin)
-	} else {
-		fmt.Println("Type data to sign and press Ctrl+D to finish:")
-		return ioutil.ReadAll(os.Stdin)
+		return io.ReadAll(os.Stdin)
 	}
+	fmt.Println("Type data to sign and press Ctrl+D to finish:")
+	return io.ReadAll(os.Stdin)
 }
 
 func printAttestationObject(format string, certs []*x509.Certificate, signer crypto.Signer, data []byte) error {
@@ -169,18 +168,18 @@ func printAttestationObject(format string, certs []*x509.Certificate, signer cry
 		}
 		alg = -7 // ES256
 		opts = crypto.SHA256
-		sum := sha256.Sum256([]byte(data))
+		sum := sha256.Sum256(data)
 		digest = sum[:]
 	case *rsa.PublicKey:
 		// TODO(mariano): support for PS256 (-37)
 		alg = -257 // RS256
 		opts = crypto.SHA256
-		sum := sha256.Sum256([]byte(data))
+		sum := sha256.Sum256(data)
 		digest = sum[:]
 	case ed25519.PublicKey:
 		alg = -8 // EdDSA
 		opts = crypto.Hash(0)
-		digest = []byte(data)
+		digest = data
 	default:
 		return fmt.Errorf("unsupported public key type %T", k)
 	}
