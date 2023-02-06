@@ -47,10 +47,10 @@ is set, an attestation object. Currently this command is only supported on
 YubiKeys.
 
 An attestation object can be used to resolve an ACME device-attest-01 challenge.
-To pass this challenge the client needs to show prove of possession of a private
-key by signing the ACME key authorization, the format is defined by RFC 8555 as
-a string that concatenates the token for the challenge with a key fingerprint
-separated by a "." character:
+To pass this challenge, the client needs proof of possession of a private key by
+signing the ACME key authorization. The format is defined in RFC 8555 as a
+string that concatenates the challenge token for the challenge with the ACME
+account key fingerprint separated by a "." character:
 
   keyAuthorization = token || '.' || base64url(Thumbprint(accountKey))`,
 	Example: `  # Get the attestation certificate from a YubiKey:
