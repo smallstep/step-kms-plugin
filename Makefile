@@ -127,12 +127,10 @@ release:
 		echo "\033[91m.release-env is required for release\033[0m";\
 		exit 1;\
 	fi
-	$Q @pwd
-	$Q @ls -a .git
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v ${PWD}:/go/src/$(PKG) \
+		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
 		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
 		release --clean
