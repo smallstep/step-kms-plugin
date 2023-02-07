@@ -120,7 +120,7 @@ release-dry-run:
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
 		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		--rm-dist --skip-validate --skip-publish
+		--clean --skip-validate --skip-publish
 
 release:
 	@if [ ! -f ".release-env" ]; then \
@@ -133,7 +133,7 @@ release:
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
 		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		release --rm-dist
+		release --clean
 
 .PHONY: release-dev release-dry-run release
 
