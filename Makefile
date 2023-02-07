@@ -127,6 +127,8 @@ release:
 		echo "\033[91m.release-env is required for release\033[0m";\
 		exit 1;\
 	fi
+	$Q @pwd
+	$Q @ls -a
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v /var/run/docker.sock:/var/run/docker.sock \
