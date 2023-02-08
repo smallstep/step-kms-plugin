@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: smallstep/workflows/.github/workflows/goCI.yml@go-matrix-fix-v3
+    uses: smallstep/workflows/.github/workflows/goCI.yml@36abd91288f80d631754dc205b0ce1632d8b9c5a
     with:
       os-dependencies: "libpcsclite-dev"
       run-codeql: true
