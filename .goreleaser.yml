@@ -44,6 +44,7 @@ builds:
     env:
       - CC=o64-clang
       - CXX=o64-clang++
+      - LD_LIBRARY_PATH=/osxcross/lib
     flags:
       - -trimpath
     ldflags:
@@ -58,6 +59,7 @@ builds:
     env:
       - CC=oa64-clang
       - CXX=oa64-clang++
+      - LD_LIBRARY_PATH=/osxcross/lib
     flags:
       - -trimpath
     ldflags:
