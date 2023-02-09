@@ -5,6 +5,10 @@
 *.so
 *.dylib
 
+# Go Workspaces
+go.work
+go.work.sum
+
 # Development
 bin/
 .vscode/
