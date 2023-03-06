@@ -8,7 +8,7 @@ RUN apt-get install -y --no-install-recommends \
                gcc pkgconf libpcsclite-dev
 RUN make V=1 build
 
-FROM smallstep/step-cli:debian
+FROM smallstep/step-cli:bullseye
 
 COPY --from=builder /src/bin/step-kms-plugin /usr/local/bin/step-kms-plugin
 
