@@ -1,6 +1,6 @@
 PKG?=github.com/smallstep/step-kms-plugin
 BINNAME?=step-kms-plugin
-GOLANG_CROSS_VERSION?=v1.20
+GOLANG_CROSS_VERSION?=v1.20.1
 
 # Set V to 1 for verbose output from the Makefile
 Q=$(if $V,,@)
@@ -111,7 +111,7 @@ release-dev:
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
-		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION}
+		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION}
 
 release-dry-run:
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 \
@@ -119,7 +119,7 @@ release-dry-run:
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
-		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
+		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
 		--clean --skip-validate --skip-publish
 
 release:
@@ -132,7 +132,7 @@ release:
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
-		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
+		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
 		release --clean
 
 .PHONY: release-dev release-dry-run release
