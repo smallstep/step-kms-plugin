@@ -3,7 +3,7 @@ FROM golang AS builder
 WORKDIR /src
 COPY . .
 
-RUN apt-get update && apt-get upgrade
+RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
                gcc pkgconf libpcsclite-dev
 RUN make V=1 build
@@ -13,6 +13,7 @@ FROM smallstep/step-cli:bullseye
 COPY --from=builder /src/bin/step-kms-plugin /usr/local/bin/step-kms-plugin
 
 USER root
+RUN apt-get update
 RUN apt-get install -y --no-install-recommends pcscd libpcsclite1
 USER step
 
