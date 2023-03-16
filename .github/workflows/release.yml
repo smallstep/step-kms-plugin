@@ -18,11 +18,13 @@ jobs:
     env:
       DOCKER_IMAGE: smallstep/step-kms-plugin
       DOCKER_IMAGE_CLOUD: smallstep/step-kms-plugin-cloud
+      DEBIAN_VERSION: bullseye
     outputs:
       version: ${{ steps.extract-tag.outputs.VERSION }}
       is_prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
       docker_tags: ${{ env.DOCKER_TAGS }}
       docker_tags_cloud: ${{ env.DOCKER_TAGS_CLOUD }}
+      docker_tags_debian: ${{ env.DOCKER_TAGS_DEBIAN }}
     steps:
       - name: Is Pre-release
         id: is_prerelease
@@ -39,11 +41,13 @@ jobs:
           echo "VERSION=${VERSION}" >> ${GITHUB_OUTPUT}
           echo "DOCKER_TAGS=${{ env.DOCKER_IMAGE }}:${VERSION}" >> ${GITHUB_ENV}
           echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE_CLOUD }}:${VERSION}" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_DEBIAN=${{ env.DOCKER_IMAGE }}:${VERSION}-${DEBIAN_VERSION}" >> ${GITHUB_ENV}
       - name: Add Latest Tag
         if: steps.is_prerelease.outputs.IS_PRERELEASE == 'false'
         run: |
           echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},${{ env.DOCKER_IMAGE }}:latest" >> ${GITHUB_ENV}
           echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_TAGS_CLOUD }},${{ env.DOCKER_IMAGE_CLOUD }}:latest" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_DEBIAN=${{ env.DOCKER_IMAGE }}:${DEBIAN_VERSION}" >> ${GITHUB_ENV}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -82,6 +86,20 @@ jobs:
       tags: ${{ needs.create_release.outputs.docker_tags }}
       docker_image: smallstep/step-kms-plugin
       docker_file: docker/Dockerfile
+    secrets: inherit
+
+  build_upload_docker_debian:
+    name: Build & Upload Docker Images using Debian
+    needs: create_release
+    permissions:
+      id-token: write
+      contents: write
+    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+    with:
+      platforms: linux/amd64,linux/386,linux/arm,linux/arm64
+      tags: ${{ needs.create_release.outputs.docker_tags_debian }}
+      docker_image: smallstep/step-cli
+      docker_file: docker/Dockerfile.debian
     secrets: inherit
 
   build_upload_docker_cloud:
