@@ -46,7 +46,7 @@ jobs:
         if: steps.is_prerelease.outputs.IS_PRERELEASE == 'false'
         run: |
           echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},${{ env.DOCKER_IMAGE }}:latest" >> ${GITHUB_ENV}
-          echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE }}:latest-${CLOUD_TAG}" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE }}:${CLOUD_TAG}" >> ${GITHUB_ENV}
           echo "DOCKER_TAGS_DEBIAN=${{ env.DOCKER_IMAGE }}:${DEBIAN_TAG}" >> ${GITHUB_ENV}
       - name: Create Release
         id: create_release
