@@ -17,12 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKER_IMAGE: smallstep/step-kms-plugin
-      DOCKER_IMAGE_CLOUD: smallstep/step-kms-plugin-cloud
+      CLOUD_TAG: cloud
+      DEBIAN_TAG: bullseye
     outputs:
       version: ${{ steps.extract-tag.outputs.VERSION }}
       is_prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
       docker_tags: ${{ env.DOCKER_TAGS }}
       docker_tags_cloud: ${{ env.DOCKER_TAGS_CLOUD }}
+      docker_tags_debian: ${{ env.DOCKER_TAGS_DEBIAN }}
     steps:
       - name: Is Pre-release
         id: is_prerelease
@@ -38,12 +40,14 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=${VERSION}" >> ${GITHUB_OUTPUT}
           echo "DOCKER_TAGS=${{ env.DOCKER_IMAGE }}:${VERSION}" >> ${GITHUB_ENV}
-          echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE_CLOUD }}:${VERSION}" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE }}:${VERSION}-${CLOUD_TAG}" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_DEBIAN=${{ env.DOCKER_IMAGE }}:${VERSION}-${DEBIAN_TAG}" >> ${GITHUB_ENV}
       - name: Add Latest Tag
         if: steps.is_prerelease.outputs.IS_PRERELEASE == 'false'
         run: |
           echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},${{ env.DOCKER_IMAGE }}:latest" >> ${GITHUB_ENV}
-          echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_TAGS_CLOUD }},${{ env.DOCKER_IMAGE_CLOUD }}:latest" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE }}:${CLOUD_TAG}" >> ${GITHUB_ENV}
+          echo "DOCKER_TAGS_DEBIAN=${{ env.DOCKER_IMAGE }}:${DEBIAN_TAG}" >> ${GITHUB_ENV}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -71,7 +75,7 @@ jobs:
         run: make release
 
   build_upload_docker:
-    name: Build & Upload Docker Images
+    name: Build & Upload Docker Image
     needs: create_release
     permissions:
       id-token: write
@@ -84,8 +88,22 @@ jobs:
       docker_file: docker/Dockerfile
     secrets: inherit
 
+  build_upload_docker_debian:
+    name: Build & Upload Debian Docker Image
+    needs: create_release
+    permissions:
+      id-token: write
+      contents: write
+    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+    with:
+      platforms: linux/amd64,linux/386,linux/arm,linux/arm64
+      tags: ${{ needs.create_release.outputs.docker_tags_debian }}
+      docker_image: smallstep/step-kms-plugin
+      docker_file: docker/Dockerfile.debian
+    secrets: inherit
+
   build_upload_docker_cloud:
-    name: Build & Upload Cloud Only Docker Images
+    name: Build & Upload Cloud-Only Docker Image
     needs: create_release
     permissions:
       id-token: write
@@ -94,6 +112,6 @@ jobs:
     with:
       platforms: linux/amd64,linux/arm64,linux/386,linux/arm
       tags: ${{ needs.create_release.outputs.docker_tags_cloud }}
-      docker_image: smallstep/step-kms-plugin-cloud
+      docker_image: smallstep/step-kms-plugin
       docker_file: docker/Dockerfile.cloud
     secrets: inherit
