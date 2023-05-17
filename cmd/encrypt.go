@@ -45,16 +45,28 @@ longer than the size of the key minus a number of bytes that depend on the
 scheme used.
 
 All KMSs support encryption, because only the public key is used. Support for
-decryption is currently limited to YubiKey and some PKCS #11 KMSs. Not all
-devices support both schemes. YubiKeys do: they support PKCS #1 v1.5 via the PIV
+decryption is currently limited to YubiKey, Google Cloud KMS and some PKCS #11 KMSs. 
+Not all devices support both schemes. YubiKeys do: they support PKCS #1 v1.5 via the PIV
 application, and they support RSA-OAEP via the YubiKey PKCS #11 library, YKCS11.
 Other PKCS #11 devices (including YubiHSM2) will generally support both
-PKCS #1 v.1.5 and RSA-OAEP.`,
+PKCS #1 v.1.5 and RSA-OAEP. Google Cloud KMS only supports RSA-OAEP and doesn't 
+support labels, so you should use "--no-label" when encrypting to a key in Google
+Cloud KMS.`,
 	Example: `  # Encrypts a password given by stdin using RSA PKCS#1 v1.5:
   echo password | step-kms-plugin encrypt yubikey:slot-id=82
 
   # Encrypts a given file using RSA-OAEP:
   step-kms-plugin encrypt --oaep --in message.txt \
+    --kms 'pkcs11:module-path=/usr/local/lib/pkcs11/yubihsm_pkcs11.dylib;token=YubiHSM?pin-value=0001password' \
+	'pkcs11:object=my-rsa-key'
+
+  # Encrypts a given file using RSA-OAEP without an OAEP label:
+  step-kms-plugin encrypt --oaep --in message.txt --no-label \
+  --kms 'cloudkms:' \
+  'projects/my-project-id/locations/global/keyRings/my-decrypter-ring/cryptoKeys/my-decrypter/cryptoKeyVersions/1'
+
+  # Encrypts a given file using RSA-OAEP and a custom label:
+  step-kms-plugin encrypt --oaep --in message.txt --label my-custom-label \
     --kms 'pkcs11:module-path=/usr/local/lib/pkcs11/yubihsm_pkcs11.dylib;token=YubiHSM?pin-value=0001password' \
 	'pkcs11:object=my-rsa-key'
 
@@ -72,6 +84,8 @@ PKCS #1 v.1.5 and RSA-OAEP.`,
 		}
 
 		oaep := flagutil.MustBool(flags, "oaep")
+		label := flagutil.MustString(flags, "label")
+		noLabel := flagutil.MustBool(flags, "no-label")
 		format := flagutil.MustString(flags, "format")
 		in := flagutil.MustString(flags, "in")
 
@@ -120,7 +134,14 @@ PKCS #1 v.1.5 and RSA-OAEP.`,
 
 		var b []byte
 		if oaep {
-			if b, err = rsa.EncryptOAEP(hash.New(), rand.Reader, pub, data, []byte(DefaultOEAPLabel)); err != nil {
+			var oaepLabel []byte
+			switch {
+			case noLabel:
+				break // nothing to do
+			default:
+				oaepLabel = []byte(label)
+			}
+			if b, err = rsa.EncryptOAEP(hash.New(), rand.Reader, pub, data, oaepLabel); err != nil {
 				return err
 			}
 		} else {
@@ -166,6 +187,8 @@ func init() {
 	format := flagutil.LowerValue("format", []string{"base64", "hex", "raw"}, "base64")
 
 	flags.Bool("oaep", false, "Use RSA-OAEP instead of RSA PKCS #1 v1.5")
+	flags.Bool("no-label", false, "Omit setting the label when RSA-OAEP is used")
+	flags.String("label", DefaultOEAPLabel, "Set a label when using RSA-OAEP")
 	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA-OAEP.\nOptions are SHA256, SHA384 or SHA512")
 	flags.Var(format, "format", "The `format` used in the input.\nOptions are base64, hex, or raw")
 	flags.String("in", "", "The `file` to encrypt instead of using STDIN.")
