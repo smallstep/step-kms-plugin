@@ -71,8 +71,8 @@ func ReadPassword(prompt string) (s []byte, err error) {
 	return
 }
 
-// WriteFile writes data to the named file, if the file exists it will ask
-// before overwriting it..
+// WriteFile writes data to the named file. If the file exists it will ask
+// for confirmation before overwriting it.
 func WriteFile(name string, data []byte, perm os.FileMode) error {
 	st, err := os.Stat(name)
 	if err != nil {
