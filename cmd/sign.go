@@ -60,8 +60,7 @@ digest of the data file for you.`,
 
   # Sign a digest using a key in Google's Cloud KMS.
   step-kms-plugin sign 1b8de4254213f8c3f784b3da4611eaeec1e720e74b4357029f8271b4ef9e1c2c \
-  --kms cloudkms: \
-  projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key/cryptoKeyVersions/1
+  cloudkms:projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key/cryptoKeyVersions/1
 
   # Sign and verify using RSA PKCS #1 with SHA512:
   step-kms-plugin sign --in data.bin --verify --alg SHA512 \
