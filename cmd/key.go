@@ -43,8 +43,8 @@ var keyCmd = &cobra.Command{
   "pkcs11:object=my-key"
 
   # Get the public key from Google's Cloud KMS:
-  step-kms-plugin key --kms cloudkms: \
-  projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key/cryptoKeyVersions/1
+  step-kms-plugin key \
+  cloudkms:projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key/cryptoKeyVersions/1
 
   # Get the public key from Azure's Key Vault:
   step-kms-plugin key 'azurekms:vault=my-key-vault;name=my-key'

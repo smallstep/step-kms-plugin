@@ -22,9 +22,11 @@ import (
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
+	"go.step.sm/crypto/kms/softkms"
 	"go.step.sm/crypto/pemutil"
 
 	"github.com/smallstep/step-kms-plugin/internal/flagutil"
+	"github.com/smallstep/step-kms-plugin/internal/termutil"
 )
 
 // createCmd represents the create command
@@ -57,14 +59,13 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
   'pkcs11:id=1000;object=my-rsa-key'
 
+  # Create a key on Google's Cloud KMS using gcloud credentials:
+  step-kms-plugin create cloudkms:projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-ec-key
+
   # Create a 4096-bit RSA-PSS key on Google's Cloud KMS with a credentials file:
   step-kms-plugin create --kty RSA --size 4096 --pss \
   --kms cloudkms:credentials-file=kms-credentials.json \
   projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-rsa-key
-
-  # Create a key on Google's Cloud KMS using gcloud credentials:
-  step-kms-plugin create --kms cloudkms: \
-  projects/my-project/locations/us-west1/keyRings/my-keyring/cryptoKeys/my-ec-key
 
   # Create a key on Azure's Key Vault using az credentials:
   step-kms-plugin create 'azurekms:vault=my-key-vault;name=my-key'
@@ -140,12 +141,26 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 			return fmt.Errorf("failed to create key: %w", err)
 		}
 
+		// Store the private key on disk if softkms is used
+		_, isSoftKMS := km.(*softkms.SoftKMS)
+		if isSoftKMS && resp.PrivateKey != nil {
+			block, err := pemutil.Serialize(resp.PrivateKey)
+			if err != nil {
+				return fmt.Errorf("failed to serialize the private key: %w", err)
+			}
+			if err := termutil.WriteFile(resp.Name, pem.EncodeToMemory(block), 0600); err != nil {
+				return fmt.Errorf("failed to write the private key: %w", err)
+			}
+		}
+
+		// Print the public key
 		block, err := pemutil.Serialize(resp.PublicKey)
 		if err != nil {
-			return fmt.Errorf("failed to serialize public key: %w", err)
+			return fmt.Errorf("failed to serialize the public key: %w", err)
 		}
 
 		if flagutil.MustBool(flags, "json") {
+
 			b, err := json.MarshalIndent(map[string]string{
 				"name":      resp.Name,
 				"publicKey": string(pem.EncodeToMemory(block)),
@@ -157,6 +172,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		} else {
 			fmt.Print(string(pem.EncodeToMemory(block)))
 		}
+
 		return nil
 	},
 }

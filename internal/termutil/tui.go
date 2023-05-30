@@ -70,3 +70,64 @@ func ReadPassword(prompt string) (s []byte, err error) {
 	})
 	return
 }
+
+// WriteFile writes data to the named file. If the file exists it will ask
+// for confirmation before overwriting it.
+func WriteFile(name string, data []byte, perm os.FileMode) error {
+	st, err := os.Stat(name)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return os.WriteFile(name, data, perm)
+		}
+		return err
+	}
+
+	if st.IsDir() {
+		return fmt.Errorf("file %q is a directory", name)
+	}
+
+	c, err := readCharacter("Would you like to overwrite %q [y/n]: ", name)
+	if err != nil {
+		return err
+	}
+
+	for {
+		switch c {
+		case 'y', 'Y':
+			return os.WriteFile(name, data, perm)
+		case 'n', 'N':
+			return os.ErrExist
+		case '\x03': // CTRL-C
+			return fmt.Errorf("user canceled prompt")
+		default:
+			c, err = readCharacter("Invalid selection %q. Would you like to overwrite %q [y/n]: ", c, name)
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// readCharacter reads a single character from the terminal with no echo. The
+// prompt is ephemeral.
+func readCharacter(prompt string, args ...any) (c byte, err error) {
+	err = withTerminal(func(in, out *os.File) error {
+		fmt.Fprintf(out, prompt, args...)
+		defer clearLine(out)
+
+		oldState, err := term.MakeRaw(int(in.Fd()))
+		if err != nil {
+			return err
+		}
+		defer term.Restore(int(in.Fd()), oldState)
+
+		b := make([]byte, 1)
+		if _, err := in.Read(b); err != nil {
+			return err
+		}
+
+		c = b[0]
+		return nil
+	})
+	return
+}
