@@ -104,18 +104,14 @@ account key fingerprint separated by a "." character:
 				return fmt.Errorf("failed to get a signer: %w", err)
 			}
 			var certs []*x509.Certificate
-			if resp.Certificate != nil {
-				certs = append([]*x509.Certificate{}, resp.Certificate)
-				certs = append(certs, resp.CertificateChain...)
+			switch {
+			case len(resp.CertificateChain) > 0:
+				certs = resp.CertificateChain
+			case resp.Certificate != nil:
+				certs = []*x509.Certificate{resp.Certificate}
 			}
 			return printAttestationObject(format, certs, signer, data)
-		case resp.Certificate != nil:
-			if err := pem.Encode(os.Stdout, &pem.Block{
-				Type:  "CERTIFICATE",
-				Bytes: resp.Certificate.Raw,
-			}); err != nil {
-				return fmt.Errorf("failed to encode certificate: %w", err)
-			}
+		case len(resp.CertificateChain) > 0:
 			for _, c := range resp.CertificateChain {
 				if err := pem.Encode(os.Stdout, &pem.Block{
 					Type:  "CERTIFICATE",
@@ -123,6 +119,14 @@ account key fingerprint separated by a "." character:
 				}); err != nil {
 					return fmt.Errorf("failed to encode certificate chain: %w", err)
 				}
+			}
+			return nil
+		case resp.Certificate != nil:
+			if err := pem.Encode(os.Stdout, &pem.Block{
+				Type:  "CERTIFICATE",
+				Bytes: resp.Certificate.Raw,
+			}); err != nil {
+				return fmt.Errorf("failed to encode certificate: %w", err)
 			}
 			return nil
 		case resp.PublicKey != nil:
