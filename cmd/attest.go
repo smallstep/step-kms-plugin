@@ -63,12 +63,13 @@ account key fingerprint separated by a "." character:
 			return showErrUsage(cmd)
 		}
 
+		name := args[0]
 		flags := cmd.Flags()
 		format := flagutil.MustString(flags, "format")
 		in := flagutil.MustString(flags, "in")
 		kuri := flagutil.MustString(flags, "kms")
 		if kuri == "" {
-			kuri = args[0]
+			kuri = name
 		}
 
 		km, err := kms.New(cmd.Context(), apiv1.Options{
@@ -85,7 +86,7 @@ account key fingerprint separated by a "." character:
 		}
 
 		resp, err := attester.CreateAttestation(&apiv1.CreateAttestationRequest{
-			Name: args[0],
+			Name: name,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to attest: %w", err)
@@ -93,12 +94,15 @@ account key fingerprint separated by a "." character:
 
 		switch {
 		case format != "":
-			data, err := getAttestationData(in)
-			if err != nil {
-				return err
+			var data []byte
+			if format != "tpm" { // the tpm format doesn't require data to be signed
+				data, err = getAttestationData(in)
+				if err != nil {
+					return err
+				}
 			}
 			signer, err := km.CreateSigner(&apiv1.CreateSignerRequest{
-				SigningKey: args[0],
+				SigningKey: name,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to get a signer: %w", err)
@@ -110,7 +114,7 @@ account key fingerprint separated by a "." character:
 			case resp.Certificate != nil:
 				certs = []*x509.Certificate{resp.Certificate}
 			}
-			return printAttestationObject(format, certs, signer, data)
+			return printAttestationObject(format, certs, signer, data, resp.CertificationParameters)
 		case len(resp.CertificateChain) > 0:
 			for _, c := range resp.CertificateChain {
 				if err := pem.Encode(os.Stdout, &pem.Block{
@@ -161,7 +165,7 @@ func getAttestationData(in string) ([]byte, error) {
 	return io.ReadAll(os.Stdin)
 }
 
-func printAttestationObject(format string, certs []*x509.Certificate, signer crypto.Signer, data []byte) error {
+func printAttestationObject(format string, certs []*x509.Certificate, signer crypto.Signer, data []byte, params *apiv1.CertificationParameters) error {
 	var alg int64
 	var digest []byte
 	var opts crypto.SignerOpts
@@ -188,21 +192,36 @@ func printAttestationObject(format string, certs []*x509.Certificate, signer cry
 		return fmt.Errorf("unsupported public key type %T", k)
 	}
 
-	// Sign proves possession of private key. Per recommendation at
-	// https://w3c.github.io/webauthn/#sctn-signature-attestation-types, we use
-	// CBOR to encode the signature.
-	sig, err := signer.Sign(rand.Reader, digest, opts)
-	if err != nil {
-		return fmt.Errorf("failed to sign key authorization: %w", err)
-	}
-	sig, err = cbor.Marshal(sig)
-	if err != nil {
-		return fmt.Errorf("failed marshaling signature: %w", err)
-	}
-
 	stmt := map[string]interface{}{
 		"alg": alg,
-		"sig": sig,
+	}
+
+	switch format {
+	case "tpm":
+		// TPM key attestation is performed at key creation time. The key is attested by
+		// an Attestation Key (AK). The result of attesting a key can be recorded, so that
+		// the certification facts can be used at a later time to verify the key was created
+		// by a specific TPM.
+		if params == nil {
+			return errors.New("TPM key attestation requires CertificationParameters to be set")
+		}
+		stmt["ver"] = "2.0"
+		stmt["sig"] = params.CreateSignature // signature over the (empty) data is ignored for the tpm format
+		stmt["certInfo"] = params.CreateAttestation
+		stmt["pubArea"] = params.Public
+	default:
+		// Sign proves possession of private key. Per recommendation at
+		// https://w3c.github.io/webauthn/#sctn-signature-attestation-types, we use
+		// CBOR to encode the signature.
+		sig, err := signer.Sign(rand.Reader, digest, opts)
+		if err != nil {
+			return fmt.Errorf("failed to sign key authorization: %w", err)
+		}
+		sig, err = cbor.Marshal(sig)
+		if err != nil {
+			return fmt.Errorf("failed marshaling signature: %w", err)
+		}
+		stmt["sig"] = sig
 	}
 
 	if len(certs) > 0 {
@@ -234,7 +253,7 @@ func init() {
 	flags := attestCmd.Flags()
 	flags.SortFlags = false
 
-	format := flagutil.LowerValue("format", []string{"", "step", "packed"}, "")
-	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step or packed")
+	format := flagutil.LowerValue("format", []string{"", "step", "packed", "tpm"}, "")
+	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step, packed or tpm")
 	flags.String("in", "", "The `file` to sign with an attestation format.")
 }
