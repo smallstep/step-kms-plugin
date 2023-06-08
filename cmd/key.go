@@ -26,7 +26,7 @@ import (
 // keyCmd represents the key command
 var keyCmd = &cobra.Command{
 	Use:   "key <uri>",
-	Short: "print the public key in a kms",
+	Short: "print the public key in a KMS",
 	Long:  `Prints a public key stored in a KMS.`,
 	Example: `  # Get the public key defining the kms uri and key together:
   step-kms-plugin key \
@@ -55,15 +55,27 @@ var keyCmd = &cobra.Command{
   # Get key from a YubiKey:
   step-kms-plugin key yubikey:slot-id=82
 
-  # Get a key from the ssh-agent
-  step-kms-plugin key sshagentkms:user@localhost`,
+  # Get a key from the ssh-agent:
+  step-kms-plugin key sshagentkms:user@localhost
+  
+  # Get a key from the default TPM KMS with KMS URI:
+  step-kms-plugin key my-key --kms tpmkms
+
+  # Get a key from the a TPM KMS, backed by /tmp/tpmobjects with KMS URI:
+  step-kms-plugin key my-key --kms tpmkms:storage-directory=/tmp/tpmobjects
+
+  # Get a key from the default TPM KMS:
+  step-kms-plugin key tpmkms:name=my-key
+  
+  # Get an AK public key from the default TPM KMS:
+  step-kms-plugin key 'tpmkms:name=my-ak;ak=true'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showErrUsage(cmd)
 		}
 
 		flags := cmd.Flags()
-		kuri := flagutil.MustString(flags, "kms")
+		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
 			kuri = args[0]
 		}
