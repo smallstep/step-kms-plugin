@@ -66,13 +66,38 @@ var certificateCmd = &cobra.Command{
 
 		// Read a certificate using the CertFS.
 		if certFile == "" {
+			if bundle {
+				km, err := kms.New(cmd.Context(), apiv1.Options{
+					URI: kuri,
+				})
+				if err != nil {
+					return fmt.Errorf("failed to load key manager: %w", err)
+				}
+				defer km.Close()
+				if cm, ok := km.(apiv1.CertificateChainManager); ok {
+					certs, err := cm.LoadCertificateChain(&apiv1.LoadCertificateChainRequest{
+						Name: name,
+					})
+					if err != nil {
+						return err
+					}
+					for _, c := range certs {
+						outputCert(c)
+					}
+					return nil
+				}
+				return fmt.Errorf("--bundle is not compatible with %q", kuri)
+			}
+
+			// TODO(hs): support reading a certificate chain / bundle instead of
+			// just single certificate in the CertFS instead? Would require supporting
+			// serializing multiple things to PEM, e.g. a certificate chain.
 			fsys, err := kms.CertFS(cmd.Context(), kuri)
 			if err != nil {
 				return err
 			}
 			defer fsys.Close()
 
-			// TODO(hs): support reading a certificate chain / bundle instead of just single certificate?
 			b, err := fs.ReadFile(fsys, name)
 			if err != nil {
 				return err

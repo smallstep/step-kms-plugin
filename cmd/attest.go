@@ -59,6 +59,9 @@ account key fingerprint separated by a "." character:
   # Create an attestation object used in an ACME device-attest-01 flow:
   echo -n <token>.<fingerprint> | step-kms-plugin attest --format step yubikey:slot-id=9c
   
+  # Get the attestation certificate belonging to an Attestion Key, using the default TPM KMS:
+  step-kms-plugin attest 'tpmkms:name=my-ak;ak=true'
+
   # Get the attestation certificate for an attested key, using the default TPM KMS:
   step-kms-plugin attest tpmkms:name=my-attested-key
 
