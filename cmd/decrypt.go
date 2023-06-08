@@ -74,7 +74,7 @@ Cloud KMS.`,
 		}
 
 		flags := cmd.Flags()
-		kuri := flagutil.MustString(flags, "kms")
+		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
 			kuri = args[0]
 		}

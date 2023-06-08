@@ -86,7 +86,7 @@ digest of the data file for you.`,
 		in := flagutil.MustString(flags, "in")
 		verify := flagutil.MustBool(flags, "verify")
 
-		kuri := flagutil.MustString(flags, "kms")
+		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
 			kuri = args[0]
 		}

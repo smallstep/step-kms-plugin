@@ -15,7 +15,9 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/pemutil"
@@ -56,6 +58,19 @@ func showErrUsage(cmd *cobra.Command) error {
 	cmd.SilenceErrors = true
 	cmd.SilenceUsage = false
 	return errUsage
+}
+
+// ensureSchemePrefix checks if a (non-empty) KMS URI contains a
+// colon, indicating it contains a potentially valid KMS scheme.
+// If the KMS URI doesn't start with a scheme, the colon is suffixed.
+// This allows users to provide '--kms tpmkms' instead of requiring
+// '--kms tpmkms:', which results in a potentially confusing error
+// message.
+func ensureSchemePrefix(kuri string) string {
+	if kuri != "" && !strings.Contains(kuri, ":") {
+		kuri = fmt.Sprintf("%s:", kuri)
+	}
+	return kuri
 }
 
 func init() {

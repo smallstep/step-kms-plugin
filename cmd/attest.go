@@ -67,7 +67,7 @@ account key fingerprint separated by a "." character:
 		flags := cmd.Flags()
 		format := flagutil.MustString(flags, "format")
 		in := flagutil.MustString(flags, "in")
-		kuri := flagutil.MustString(flags, "kms")
+		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
 			kuri = name
 		}
