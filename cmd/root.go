@@ -14,6 +14,8 @@
 package cmd
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
@@ -71,6 +73,18 @@ func ensureSchemePrefix(kuri string) string {
 		kuri = fmt.Sprintf("%s:", kuri)
 	}
 	return kuri
+}
+
+// outputCert encodes an X.509 certificate to PEM format
+// and writes it to stdout.
+func outputCert(c *x509.Certificate) error {
+	if err := pem.Encode(os.Stdout, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: c.Raw,
+	}); err != nil {
+		return fmt.Errorf("failed to encode certificate: %w", err)
+	}
+	return nil
 }
 
 func init() {

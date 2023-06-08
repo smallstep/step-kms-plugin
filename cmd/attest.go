@@ -69,8 +69,8 @@ account key fingerprint separated by a "." character:
   step-kms-plugin attest --format tpm tpmkms:name=my-attested-key
 
   # Create an attestation statement for an attested key, using the default TPM KMS,
-  enrolling with a Smallstep Attestation CA if no AK certificate is avaiable (yet):
-  step-kms-plugin attest --format tpm 'tpmkms:name=my-attested-key;attestation-ca-url=https://my.attestation.ca/baseurl;attestation-ca-root=/path/to/trusted/roots.pem'`,
+  enrolling with a Smallstep Attestation CA if no AK certificate is available (yet):
+  step-kms-plugin attest --format tpm 'tpmkms:name=my-attested-key;attestation-ca-url=https://my.attestation.ca/url;attestation-ca-root=/path/to/trusted/roots.pem'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showErrUsage(cmd)
@@ -133,16 +133,16 @@ account key fingerprint separated by a "." character:
 			switch {
 			case bundle:
 				for _, c := range resp.CertificateChain {
-					if err := out(c); err != nil {
+					if err := outputCert(c); err != nil {
 						return err
 					}
 				}
 			default:
-				return out(resp.CertificateChain[0])
+				return outputCert(resp.CertificateChain[0])
 			}
 			return nil
 		case resp.Certificate != nil:
-			return out(resp.Certificate)
+			return outputCert(resp.Certificate)
 		case resp.PublicKey != nil:
 			block, err := pemutil.Serialize(resp.PublicKey)
 			if err != nil {
@@ -153,16 +153,6 @@ account key fingerprint separated by a "." character:
 			return errors.New("failed to create attestation: unsupported response")
 		}
 	},
-}
-
-func out(c *x509.Certificate) error {
-	if err := pem.Encode(os.Stdout, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: c.Raw,
-	}); err != nil {
-		return fmt.Errorf("failed to encode certificate: %w", err)
-	}
-	return nil
 }
 
 type attestationObject struct {

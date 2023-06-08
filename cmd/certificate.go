@@ -15,7 +15,6 @@ package cmd
 
 import (
 	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"io/fs"
 
@@ -73,7 +72,8 @@ var certificateCmd = &cobra.Command{
 			}
 			defer fsys.Close()
 
-			b, err := fs.ReadFile(fsys, args[0]) // TODO: make this read the full chain?
+			// TODO(hs): support reading a certificate chain / bundle instead of just single certificate?
+			b, err := fs.ReadFile(fsys, name)
 			if err != nil {
 				return err
 			}
@@ -132,16 +132,10 @@ var certificateCmd = &cobra.Command{
 		switch {
 		case bundle:
 			for _, c := range certs {
-				fmt.Print(string(pem.EncodeToMemory(&pem.Block{
-					Type:  "CERTIFICATE",
-					Bytes: c.Raw,
-				})))
+				outputCert(c)
 			}
 		default:
-			fmt.Print(string(pem.EncodeToMemory(&pem.Block{
-				Type:  "CERTIFICATE",
-				Bytes: cert.Raw,
-			})))
+			outputCert(cert)
 		}
 
 		return nil
