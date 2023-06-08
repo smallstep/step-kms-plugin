@@ -100,7 +100,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		}
 
 		flags := cmd.Flags()
-
+		name := args[0]
 		kty := flagutil.MustString(flags, "kty")
 		crv := flagutil.MustString(flags, "crv")
 		size := flagutil.MustInt(flags, "size")
@@ -131,7 +131,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 
 		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
-			kuri = args[0]
+			kuri = name
 		}
 
 		cmd.SilenceUsage = true
@@ -144,7 +144,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		defer km.Close()
 
 		resp, err := km.CreateKey(&apiv1.CreateKeyRequest{
-			Name:               args[0],
+			Name:               name,
 			SignatureAlgorithm: signatureAlgorithm,
 			Bits:               size,
 			ProtectionLevel:    protectionLevel,
@@ -175,7 +175,6 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		}
 
 		if flagutil.MustBool(flags, "json") {
-
 			b, err := json.MarshalIndent(map[string]string{
 				"name":      resp.Name,
 				"publicKey": string(pem.EncodeToMemory(block)),

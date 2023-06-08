@@ -52,35 +52,42 @@ Other PKCS #11 devices (including YubiHSM2) will generally support both
 PKCS #1 v.1.5 and RSA-OAEP. Google Cloud KMS only supports RSA-OAEP and doesn't 
 support labels, so you should use "--no-label" when encrypting to a key in Google
 Cloud KMS.`,
-	Example: `  # Encrypts a password given by stdin using RSA PKCS#1 v1.5:
+	Example: `  # Encrypt a password given by stdin using RSA PKCS#1 v1.5:
   echo password | step-kms-plugin encrypt yubikey:slot-id=82
 
-  # Encrypts a given file using RSA-OAEP:
+  # Encrypt a given file using RSA-OAEP:
   step-kms-plugin encrypt --oaep --in message.txt \
     --kms 'pkcs11:module-path=/usr/local/lib/pkcs11/yubihsm_pkcs11.dylib;token=YubiHSM?pin-value=0001password' \
 	'pkcs11:object=my-rsa-key'
 
-  # Encrypts a given file using RSA-OAEP without an OAEP label:
+  # Encrypt a given file using RSA-OAEP without an OAEP label:
   step-kms-plugin encrypt --oaep --in message.txt --no-label \
   --kms 'cloudkms:' \
   'projects/my-project-id/locations/global/keyRings/my-decrypter-ring/cryptoKeys/my-decrypter/cryptoKeyVersions/1'
 
-  # Encrypts a given file using RSA-OAEP and a custom label:
+  # Encrypt a given file using RSA-OAEP and a custom label:
   step-kms-plugin encrypt --oaep --in message.txt --label my-custom-label \
     --kms 'pkcs11:module-path=/usr/local/lib/pkcs11/yubihsm_pkcs11.dylib;token=YubiHSM?pin-value=0001password' \
 	'pkcs11:object=my-rsa-key'
 
-  # Encrypts a given file using a key in disk using the hexadecimal format:
-  step-kms-plugin encrypt --format hex --in message.txt --kms softkms: rsa.pub`,
+  # Encrypt a given file using a key in disk using the hexadecimal format:
+  step-kms-plugin encrypt --format hex --in message.txt --kms softkms: rsa.pub
+  
+  # Encrypt a given file using an Attestation Key in the default TPM KMS:
+  step kms encrypt --in message.txt 'tpmkms:my-ak;ak=true'
+
+  # Encrypt a given file using a key in the default TPM KMS:
+  step kms encrypt --in message.txt tpmkms:my-key`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if l := len(args); l != 1 {
 			return showErrUsage(cmd)
 		}
 
+		name := args[0]
 		flags := cmd.Flags()
 		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
-			kuri = args[0]
+			kuri = name
 		}
 
 		oaep := flagutil.MustBool(flags, "oaep")
@@ -121,7 +128,7 @@ Cloud KMS.`,
 		defer km.Close()
 
 		key, err := km.GetPublicKey(&apiv1.GetPublicKeyRequest{
-			Name: args[0],
+			Name: name,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to get the public key: %w", err)

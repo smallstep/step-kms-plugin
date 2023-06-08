@@ -43,8 +43,8 @@ var attestCmd = &cobra.Command{
 	Use:   "attest <uri>",
 	Short: "create an attestation certificate",
 	Long: `Print an attestation certificate, an endorsement key, or if the "--format" flag
-is set, an attestation object. Currently this command is only supported on
-YubiKeys.
+is set, an attestation object. Currently this command is only supported with
+YubiKeys and the TPM KMS.
 
 An attestation object can be used to resolve an ACME device-attest-01 challenge.
 To pass this challenge, the client needs proof of possession of a private key by
@@ -57,7 +57,20 @@ account key fingerprint separated by a "." character:
   step-kms-plugin attest yubikey:slot-id=9c
 
   # Create an attestation object used in an ACME device-attest-01 flow:
-  echo -n <token>.<fingerprint> | step-kms-plugin attest --format step yubikey:slot-id=9c`,
+  echo -n <token>.<fingerprint> | step-kms-plugin attest --format step yubikey:slot-id=9c
+  
+  # Get the attestation certificate for an attested key, using the default TPM KMS:
+  step-kms-plugin attest tpmkms:name=my-attested-key
+
+  # Get the attestation certificate chain for an attested key, using the default TPM KMS:
+  step-kms-plugin attest --bundle tpmkms:name=my-attested-key
+
+  # Create an attestation statement for an attested key, using the default TPM KMS:
+  step-kms-plugin attest --format tpm tpmkms:name=my-attested-key
+
+  # Create an attestation statement for an attested key, using the default TPM KMS,
+  enrolling with a Smallstep Attestation CA if no AK certificate is avaiable (yet):
+  step-kms-plugin attest --format tpm 'tpmkms:name=my-attested-key;attestation-ca-url=https://my.attestation.ca/baseurl;attestation-ca-root=/path/to/trusted/roots.pem'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showErrUsage(cmd)
@@ -66,6 +79,7 @@ account key fingerprint separated by a "." character:
 		name := args[0]
 		flags := cmd.Flags()
 		format := flagutil.MustString(flags, "format")
+		bundle := flagutil.MustBool(flags, "bundle")
 		in := flagutil.MustString(flags, "in")
 		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
@@ -95,16 +109,16 @@ account key fingerprint separated by a "." character:
 		switch {
 		case format != "":
 			var data []byte
+			var signer crypto.Signer
 			if format != "tpm" { // the tpm format doesn't require data to be signed
 				data, err = getAttestationData(in)
 				if err != nil {
 					return err
 				}
 			}
-			signer, err := km.CreateSigner(&apiv1.CreateSignerRequest{
+			if signer, err = km.CreateSigner(&apiv1.CreateSignerRequest{
 				SigningKey: name,
-			})
-			if err != nil {
+			}); err != nil {
 				return fmt.Errorf("failed to get a signer: %w", err)
 			}
 			var certs []*x509.Certificate
@@ -116,23 +130,19 @@ account key fingerprint separated by a "." character:
 			}
 			return printAttestationObject(format, certs, signer, data, resp.CertificationParameters)
 		case len(resp.CertificateChain) > 0:
-			for _, c := range resp.CertificateChain {
-				if err := pem.Encode(os.Stdout, &pem.Block{
-					Type:  "CERTIFICATE",
-					Bytes: c.Raw,
-				}); err != nil {
-					return fmt.Errorf("failed to encode certificate chain: %w", err)
+			switch {
+			case bundle:
+				for _, c := range resp.CertificateChain {
+					if err := out(c); err != nil {
+						return err
+					}
 				}
+			default:
+				return out(resp.CertificateChain[0])
 			}
 			return nil
 		case resp.Certificate != nil:
-			if err := pem.Encode(os.Stdout, &pem.Block{
-				Type:  "CERTIFICATE",
-				Bytes: resp.Certificate.Raw,
-			}); err != nil {
-				return fmt.Errorf("failed to encode certificate: %w", err)
-			}
-			return nil
+			return out(resp.Certificate)
 		case resp.PublicKey != nil:
 			block, err := pemutil.Serialize(resp.PublicKey)
 			if err != nil {
@@ -143,6 +153,16 @@ account key fingerprint separated by a "." character:
 			return errors.New("failed to create attestation: unsupported response")
 		}
 	},
+}
+
+func out(c *x509.Certificate) error {
+	if err := pem.Encode(os.Stdout, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: c.Raw,
+	}); err != nil {
+		return fmt.Errorf("failed to encode certificate: %w", err)
+	}
+	return nil
 }
 
 type attestationObject struct {
@@ -255,5 +275,6 @@ func init() {
 
 	format := flagutil.LowerValue("format", []string{"", "step", "packed", "tpm"}, "")
 	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step, packed or tpm")
+	flags.Bool("bundle", false, "Print all certificates in the chain")
 	flags.String("in", "", "The `file` to sign with an attestation format.")
 }

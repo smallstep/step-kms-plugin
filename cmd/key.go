@@ -74,10 +74,11 @@ var keyCmd = &cobra.Command{
 			return showErrUsage(cmd)
 		}
 
+		name := args[0]
 		flags := cmd.Flags()
 		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
-			kuri = args[0]
+			kuri = name
 		}
 
 		fsys, err := kms.KeyFS(cmd.Context(), kuri)
@@ -86,7 +87,7 @@ var keyCmd = &cobra.Command{
 		}
 		defer fsys.Close()
 
-		b, err := fs.ReadFile(fsys, args[0])
+		b, err := fs.ReadFile(fsys, name)
 		if err != nil {
 			return err
 		}
