@@ -40,6 +40,12 @@ var certificateCmd = &cobra.Command{
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
   'pkcs11:id=2000;object=my-cert'
   
+  # Import a certificate for an Attestation Key (AK), using the default TPM KMS:
+  step-kms-plugin certificate --import cert.pem 'tpmkms:name=my-ak;ak=true'
+
+  # Import a certificate, using the default TPM KMS:
+  step-kms-plugin certificate --import cert.pem tpmkms:name=my-key
+
   # Print a previously stored certificate for an Attestation Key (AK), using the default TPM KMS:
   step-kms-plugin certificate 'tpmkms:name=my-ak;ak=true'
 
