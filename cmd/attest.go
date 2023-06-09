@@ -62,11 +62,11 @@ account key fingerprint separated by a "." character:
   # Get the attestation certificate belonging to an Attestion Key, using the default TPM KMS:
   step-kms-plugin attest 'tpmkms:name=my-ak;ak=true'
 
-  # Get the attestation certificate for an attested key, using the default TPM KMS:
+  # Get the attestation certificate chain for an attested key, using the default TPM KMS:
   step-kms-plugin attest tpmkms:name=my-attested-key
 
-  # Get the attestation certificate chain for an attested key, using the default TPM KMS:
-  step-kms-plugin attest --bundle tpmkms:name=my-attested-key
+  # Get the attestation certificate for an attested key, using the default TPM KMS:
+  step-kms-plugin attest --leaf tpmkms:name=my-attested-key
 
   # Create an attestation statement for an attested key, using the default TPM KMS:
   step-kms-plugin attest --format tpm tpmkms:name=my-attested-key
@@ -82,7 +82,7 @@ account key fingerprint separated by a "." character:
 		name := args[0]
 		flags := cmd.Flags()
 		format := flagutil.MustString(flags, "format")
-		bundle := flagutil.MustBool(flags, "bundle")
+		leaf := flagutil.MustBool(flags, "leaf")
 		in := flagutil.MustString(flags, "in")
 		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
@@ -134,14 +134,14 @@ account key fingerprint separated by a "." character:
 			return printAttestationObject(format, certs, signer, data, resp.CertificationParameters)
 		case len(resp.CertificateChain) > 0:
 			switch {
-			case bundle:
+			case leaf:
+				return outputCert(resp.CertificateChain[0])
+			default:
 				for _, c := range resp.CertificateChain {
 					if err := outputCert(c); err != nil {
 						return err
 					}
 				}
-			default:
-				return outputCert(resp.CertificateChain[0])
 			}
 			return nil
 		case resp.Certificate != nil:
@@ -268,6 +268,6 @@ func init() {
 
 	format := flagutil.LowerValue("format", []string{"", "step", "packed", "tpm"}, "")
 	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step, packed or tpm")
-	flags.Bool("bundle", false, "Print all certificates in the chain")
+	flags.Bool("leaf", false, "Print only the leaf certificate in a chain")
 	flags.String("in", "", "The `file` to sign with an attestation format.")
 }
