@@ -14,7 +14,6 @@
 package cmd
 
 import (
-	"crypto/x509"
 	"fmt"
 	"io/fs"
 
@@ -108,11 +107,14 @@ var certificateCmd = &cobra.Command{
 		}
 
 		// Import and read certificate using the key manager to avoid opening the kms twice.
-		var cert *x509.Certificate
 		certs, err := pemutil.ReadCertificateBundle(certFile)
 		if err != nil {
 			return err
 		}
+		if len(certs) == 0 {
+			return fmt.Errorf("no certificates found in %q", certFile)
+		}
+		cert := certs[0]
 
 		km, err := kms.New(cmd.Context(), apiv1.Options{
 			URI: kuri,
