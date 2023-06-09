@@ -84,6 +84,11 @@ account key fingerprint separated by a "." character:
 		format := flagutil.MustString(flags, "format")
 		leaf := flagutil.MustBool(flags, "leaf")
 		in := flagutil.MustString(flags, "in")
+		newKey := flagutil.MustBool(flags, "new")
+		kty := flagutil.MustString(flags, "kty")
+		crv := flagutil.MustString(flags, "crv")
+		size := flagutil.MustInt(flags, "size")
+		alg := flagutil.MustString(flags, "alg")
 		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
 			kuri = name
@@ -96,6 +101,34 @@ account key fingerprint separated by a "." character:
 			return fmt.Errorf("failed to load key manager: %w", err)
 		}
 		defer km.Close()
+
+		if format == "tpm" && newKey {
+			if kty != "RSA" {
+				size = 0
+			}
+			// Do not set crv unless the flag is explicitly set by the user
+			if kty != "EC" && !flags.Changed("crv") {
+				crv = ""
+			}
+			signatureAlgorithm := getSignatureAlgorithm(kty, crv, alg, false)
+			if signatureAlgorithm == apiv1.UnspecifiedSignAlgorithm {
+				return fmt.Errorf("failed to get a signature algorithm with kty: %q, crv: %q, hash: %q", kty, crv, alg)
+			}
+
+			// TODO(hs): support reading the attesting data (key authorization / qualifying data)
+			// from stdin. Currently it needs to be provided as part of the key URI (e.g. qualifying-data=<hex>),
+			// for TPMs, but for the other formats, it is read from stdout. This would require
+			// a new property in the CreateKeyRequest, or changing the value of `name`.
+			resp, err := km.CreateKey(&apiv1.CreateKeyRequest{
+				Name:               name,
+				SignatureAlgorithm: signatureAlgorithm,
+				Bits:               size,
+			})
+			if err != nil {
+				return err
+			}
+			name = resp.Name // continue with updated name
+		}
 
 		attester, ok := km.(apiv1.Attester)
 		if !ok {
@@ -266,8 +299,18 @@ func init() {
 	flags := attestCmd.Flags()
 	flags.SortFlags = false
 
+	// TODO(hs): fix/validate valid values for TPM
+	kty := flagutil.UpperValue("kty", []string{"EC", "RSA"}, "RSA")
+	crv := flagutil.NormalizedValue("crv", []string{"P256", "P384", "P521"}, "P256")
+	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
+
 	format := flagutil.LowerValue("format", []string{"", "step", "packed", "tpm"}, "")
 	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step, packed or tpm")
 	flags.Bool("leaf", false, "Print only the leaf certificate in a chain")
+	flags.Bool("new", false, "(EXPERIMENTAL) Creates and attests a new key instead of attesting an existing one")
+	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC and RSA")
+	flags.Var(crv, "crv", "The elliptic `curve` to use for EC and OKP key types.\nOptions are P256, P384 and P521")
+	flags.Int("size", 2048, "The key size for an RSA key") // TODO(hs): attesting 3072 bit RSA keys returns an error from TPM, currently; originates from go-tpm
+	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
 	flags.String("in", "", "The `file` to sign with an attestation format.")
 }
