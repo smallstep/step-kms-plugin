@@ -310,7 +310,7 @@ func init() {
 	flags.Bool("new", false, "(EXPERIMENTAL) Creates and attests a new key instead of attesting an existing one")
 	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC and RSA")
 	flags.Var(crv, "crv", "The elliptic `curve` to use for EC and OKP key types.\nOptions are P256, P384 and P521")
-	flags.Int("size", 2048, "The key size for an RSA key") // TODO(hs): attesting 3072 bit RSA keys returns an error from TPM, currently; originates from go-tpm
+	flags.Int("size", 2048, "The key size for an RSA key") // TODO(hs): attesting 3072 bit RSA keys on TPM that doesn't support it returns an ugly error; we want to catch that earlier.
 	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
 	flags.String("in", "", "The `file` to sign with an attestation format.")
 }
