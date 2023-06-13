@@ -308,9 +308,9 @@ func init() {
 	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step, packed or tpm")
 	flags.Bool("leaf", false, "Print only the leaf certificate in a chain")
 	flags.Bool("new", false, "(EXPERIMENTAL) Creates and attests a new key instead of attesting an existing one")
-	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC and RSA")
-	flags.Var(crv, "crv", "The elliptic `curve` to use for EC and OKP key types.\nOptions are P256, P384 and P521")
+	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC and RSA. Only used with TPMKMS.")
+	flags.Var(crv, "crv", "The elliptic `curve` to use for EC and OKP key types.\nOptions are P256, P384 and P521. Only used with TPMKMS.")
 	flags.Int("size", 2048, "The key size for an RSA key") // TODO(hs): attesting 3072 bit RSA keys on TPM that doesn't support it returns an ugly error; we want to catch that earlier.
-	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
+	flags.Var(alg, "alg", "The hashing `algorithm` to use with RSA PKCS #1 signatures.\nOptions are SHA256, SHA384 or SHA512. Only used with TPMKMS.")
 	flags.String("in", "", "The `file` to sign with an attestation format.")
 }
