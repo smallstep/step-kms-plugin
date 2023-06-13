@@ -4,8 +4,7 @@ WORKDIR /src
 COPY . .
 
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends \
-               gcc pkgconf libpcsclite-dev
+RUN apt-get install -y --no-install-recommends gcc pkgconf libpcsclite-dev
 RUN make V=1 build
 
 FROM smallstep/step-cli:bullseye
@@ -14,7 +13,7 @@ COPY --from=builder /src/bin/step-kms-plugin /usr/local/bin/step-kms-plugin
 
 USER root
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends pcscd libpcsclite1
+RUN apt-get install -y --no-install-recommends pcscd libpcsclite1 p11-kit p11-kit-modules
 USER step
 
 CMD ["/bin/bash"]
