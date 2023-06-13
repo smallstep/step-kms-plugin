@@ -28,6 +28,7 @@ The following "Key Management Systems" or KMSs are supported, but not all of
 them provide the full functionality:
 
 * PKCS #11 modules
+* [TPM 2.0](https://trustedcomputinggroup.org/resource/tpm-library-specification/)
 * [Amazon AWS KMS](https://aws.amazon.com/kms/)
 * [Google Cloud Key Management](https://cloud.google.com/security-key-management)
 * [Microsoft Azure Key Vault](https://azure.microsoft.com/en-us/services/key-vault/)
@@ -47,8 +48,8 @@ The commands under `step kms` will directly call `step-kms-plugin` with the
 given arguments. For example, these two commands are equivalent:
 
 ```console
-step kms create --kty EC --crv P384 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1000;object=mykey?pin-value=password'
-step-kms-plugin create --kty EC --crv P384 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1000;object=mykey?pin-value=password'
+step kms create --kty EC --crv P384 'pkcs11:token=smallstep;id=1000;object=mykey?pin-value=password'
+step-kms-plugin create --kty EC --crv P384 'pkcs11:token=smallstep;id=1000;object=mykey?pin-value=password'
 ```
 
 For the rest of the examples, we are going to use the plugin usage, `step kms`,
@@ -68,6 +69,39 @@ You can later delete it running:
 softhsm2-util --delete-token --token smallstep
 ```
 
+### p11-kit integration
+
+When `step-kms-plugin` is used with PKCS #11, it needs the filename of the PKCS
+#11 module to load. The module can be directly passed using the `module-path`
+parameter. But if it is not defined, it will use the
+[p11-kit-proxy](https://p11-glue.github.io/p11-glue/p11-kit/manual/sharing.html)
+module provided by the
+[p11-kit](https://p11-glue.github.io/p11-glue/p11-kit.html) project.
+
+p11-kit provides a standard configuration setup for installing PKCS #11 modules
+so they're discoverable. p11-kit uses a configuration file
+[pkcs11.conf](https://p11-glue.github.io/p11-glue/p11-kit/manual/pkcs11-conf.html)
+that allows you to define the module to use. By default, it also allows you to
+add configurations in the user's home directory. We will use this last option to
+define the SoftHSM 2 module.
+
+With a simple file like following in `~/.config/pkcs11/modules/softhsm2`,
+p11-kit-proxy will know which module to load:
+
+```
+module: /usr/local/lib/softhsm/libsofthsm2.so
+```
+
+This configuration will make these commands equivalent:
+
+```console
+step-kms-plugin create --kty EC --crv P384 'pkcs11:token=smallstep;id=1000;object=mykey?pin-value=password'
+step-kms-plugin create --kty EC --crv P384 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1000;object=mykey?pin-value=password'
+```
+
+In the following sections, we will skip the `module-path` and assume that
+p11-kit is properly configured with SoftHSM 2.
+
 ### Creating a new key
 
 Our PKCS #11 implementation requires always an object id (`id=1000`) and label
@@ -77,7 +111,7 @@ defines the module to use.
 By default, the create command creates an EC P-256 key:
 
 ```console
-$ step kms create 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1000;object=my-p256?pin-value=password'
+$ step kms create 'pkcs11:token=smallstep;id=1000;object=my-p256?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEjg5Zs/fSuvfodhZQcxcu07deKsdX
 sQf46/JPxQ39kPIkhD+onVVxCl462yMGVTQeLDCN3fwImoOdqZ3eKhoQOA==
@@ -90,13 +124,13 @@ define precisely the key to generate. Here we are creating a P-384 and a
 3072-bit RSA key:
 
 ```console
-$ step kms create --kty EC --crv P384 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1001;object=my-p384?pin-value=password'
+$ step kms create --kty EC --crv P384 'pkcs11:token=smallstep;id=1001;object=my-p384?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBDdy2wnC6r8n2qZTa3kefjo3CEkaWXz6
 rWTbDNEYrzc9LXEoA7zI1j+liSGR9wLmu91keOBnweQOIR06QV12InEKFX2l3lRx
 nDPvq7P3MeRo9UqzKlZT+D+dhYQjB54K
 -----END PUBLIC KEY-----
-$ step kms create --kty RSA --size 3072 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1002;object=my-rsa?pin-value=password'
+$ step kms create --kty RSA --size 3072 'pkcs11:token=smallstep;id=1002;object=my-rsa?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzAtriAh4ABfboPff15CD
 Skzxghaeb5SqcCwvZYdlZDRlZHlcbweY80bHjFvcU+ytSZOoMgBw+XooUnTmeVo3
@@ -120,18 +154,18 @@ To retrieve the public key, we can use the `id`, the `object`, or both at the
 same time:
 
 ```console
-$ step kms key 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1000;object=my-p256?pin-value=password'
+$ step kms key 'pkcs11:token=smallstep;id=1000;object=my-p256?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEjg5Zs/fSuvfodhZQcxcu07deKsdX
 sQf46/JPxQ39kPIkhD+onVVxCl462yMGVTQeLDCN3fwImoOdqZ3eKhoQOA==
 -----END PUBLIC KEY-----
-$ step kms key 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1001?pin-value=password'
+$ step kms key 'pkcs11:token=smallstep;id=1001?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBDdy2wnC6r8n2qZTa3kefjo3CEkaWXz6
 rWTbDNEYrzc9LXEoA7zI1j+liSGR9wLmu91keOBnweQOIR06QV12InEKFX2l3lRx
 nDPvq7P3MeRo9UqzKlZT+D+dhYQjB54K
 -----END PUBLIC KEY-----
-$ step kms key 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;object=my-rsa?pin-value=password'
+$ step kms key 'pkcs11:token=smallstep;object=my-rsa?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzAtriAh4ABfboPff15CD
 Skzxghaeb5SqcCwvZYdlZDRlZHlcbweY80bHjFvcU+ytSZOoMgBw+XooUnTmeVo3
@@ -157,18 +191,18 @@ And then use the previous keys to sign, as before we can either use `id`,
 `object`, or both:
 
 ```console
-$ step kms sign --in data.txt 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1000;object=my-p256?pin-value=password'
+$ step kms sign --in data.txt 'pkcs11:token=smallstep;id=1000;object=my-p256?pin-value=password'
 MEQCIH2WfsgVRfCJs/sgIftT3i7xbpslS+9ShW/3qO9jXeA7AiBZFkcum+68zQ7pxluUE1v1yjCDyo34OEGIIyic9ItBcA==
-$ step kms sign --in data.txt 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1001?pin-value=password'
+$ step kms sign --in data.txt 'pkcs11:token=smallstep;id=1001?pin-value=password'
 MGUCMQDtK5cADG4D3AXRLeTLvOpcDoOfYHJqt8eVVhKPg+Q5z9Hk3DSBlz/h1+YGyV11crYCMEVnQIqSdYQLB096DyLrZG28+cMjKfs+mlg+UUeVShnjHgBNGt2tHCeAZAS0VV4u4A==
-$ step kms sign --in data.txt 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;object=my-rsa?pin-value=password'
+$ step kms sign --in data.txt 'pkcs11:token=smallstep;object=my-rsa?pin-value=password'
 AYbuQf6JfQMxrnaolaOyaddW4dfHU4Rg/mXXYTzSns3WUxuxJ2yXysm2Af0DrSaoqg3J4pFAmKiadDf+AZeBi0Lwwx1GpTxxOaiGDAuCuUJyUDcA/G2mTNX9+eEQkI/vOIM6Z+5T9kqP48BN3GKV5e51feSmkP6ihnQVXhW7kgPDOWt2Qq3GjJvOrn0pIjSgiYMYviMDvgcgxPuIhktYc7ZBWW63gmZ40nR3TFzTveWn7vBCGPJMOi6eOjPKRvpzo0II5froUgbTZXXFfb0r7xhMx872i2/MlRL/xhc0iy2BEXWWcoJovrbO5SdMGM0iDDkAOYceQxqW+HPf6Ghd7KA/hP6Rr0PwpfdxW7h8fF45bHrKDCXzIY4U+tHF9E16adA5axDwHVSnO8Hm5tajhB0VM7w3DYnu3npX/ko4RJw/kXe0PzhBqr+f67mhoCOuKkrsc8p8ABensZA5LeWivo78i1KMFWkh9SMRcq728GUx5/wdkc9boYr/jFNJ4WKf
 ```
 
 We can use `step` to verify one of these signatures:
 
 ```console
-$ step kms key 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=1000?pin-value=password' > my-p256.key
+$ step kms key 'pkcs11:token=smallstep;id=1000?pin-value=password' > my-p256.key
 $ step crypto key verify --key my-p256.key \
   --signature MEQCIH2WfsgVRfCJs/sgIftT3i7xbpslS+9ShW/3qO9jXeA7AiBZFkcum+68zQ7pxluUE1v1yjCDyo34OEGIIyic9ItBcA== data.txt
 true
@@ -179,9 +213,9 @@ use the `--alg` to select the hash function and `--pss` to use the RSA-PSS
 scheme:
 
 ```console
-$ step kms sign --alg SHA512  --in data.txt 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;object=my-rsa?pin-value=password'
+$ step kms sign --alg SHA512  --in data.txt 'pkcs11:token=smallstep;object=my-rsa?pin-value=password'
 ljdurcImEwOgAOxntf4+U56w1+lf8V/wOWrRfMS3PvtSz3KSfRZZu10ZxtIG7ilZFNUnb0svTM9e3+ViYCOX+3zxu22F4DWp6E5S92TbS7AImQbMybl7rYtYloDBSagJ5T0d1h3wVg77Npi5Fkcn39ekWDeSmrEK359H0EJAoSFTVfYJ4vYUvFHbO5Zn/BgWQNtTVoSCDSnSX1cu3Nar9N2bAcGbbfjBcwQsjg+NDRgdxxNJESKYHL280gvZR0wLpYvX4jf57UUVLF4WdMEh1YGPsBGzO/M1rSMS8pYZVD1kNOwIq7buFGAVAgl8UirtIe0joUYQekVhFbGEgADTv33fWOa8B95ARGraR5mE0lg5vwC/8SeZL9M4iIS5cdn+lOs/Nj5GDySykpgsCPi+irqKRgMcC88omv8/ofqcUIJpm+IOhE47IvL3CjlItEJV55kQjC4qrdNb9/w4vk7fFtW/amdxb5juajU2AIfuKFduaHhwSJpyguzmi2Zc0r7e
-$ step kms sign --alg SHA256 --pss  --in data.txt 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;object=my-rsa?pin-value=password'
+$ step kms sign --alg SHA256 --pss  --in data.txt 'pkcs11:token=smallstep;object=my-rsa?pin-value=password'
 iT/enoe6zXfz4bZolrQUoYf+B5bDhn++cfkgM4x4ozqX8xd6lljPMODGB3Z43rfvUHc3A//ULzN8DjAzA7nuExneexrlAalwhqeMHSLHAmJsztgpuQ2OHdpsEfWIbkQgd4lfZWBq0Srri32SEqTnqp+s2Itf1R1By6PFcsftVMFvH3foXn3bEwWK8gHsxLRt/bnqC7ubXU+b/xjUQiu/LMl+p7RSFVjDtm3e0j07G6cbsABsr4EA0Xlw7JRrYbiP3hz4GwfRbfSBKBXrCF+edpBhGtscJnrdwL9LD/MbaDgEWrf8lO1UFmLp2B6NsjvNiQhZJ4ruQ4isHOF669z5cFcB5Hc14i4ZI81dYAI8AjG7NZvF07bH32gM2h6vVEgesrTqqcKpLW/dge3cpcEimA0Nfzpeg6ZnhnugCtI8FBDZAbo3KP9e4O2mXydP5MmZu4vWajjWc4h3sReBFXg888j2dh8gsJXCIGNUXUzULHysfdTVivnewtW2sDDnEK+L
 ```
 
@@ -194,7 +228,7 @@ commands, we can initialize our PKI using a key stored in a KMS.
 Let's create first a root key:
 
 ```console
-$ step kms create 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=2000;object=root?pin-value=password'
+$ step kms create 'pkcs11:token=smallstep;id=2000;object=root?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5fbczGkGeLrLu3nD7mbdS0PmqDUT
 jT/f0r5U71dCAhP2T4rTfdrgnFPacX/a4jeQ1sMn4grtNFc1A4CE6vBt0A==
@@ -205,7 +239,7 @@ And use it to create the root certificate:
 
 ```console
 $ step certificate create --profile root-ca \
-  --kms 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep?pin-value=password' \
+  --kms 'pkcs11:token=smallstep?pin-value=password' \
   --key 'pkcs11:id=2000' \
   "Smallstep Root CA" root_ca.crt
 Your certificate has been saved in root_ca.crt.
@@ -217,7 +251,7 @@ is passed using two different flags. This might be improved in the future.
 Now let's create a key for the intermediate certificate:
 
 ```console
-$ step kms create 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=2001;object=intermediate?pin-value=password'
+$ step kms create 'pkcs11:token=smallstep;id=2001;object=intermediate?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZUm9hNkXPn9KrXrG1vzhgzTwqD4+
 j0Wo9CQOP7GQApJLcVO9TGpzpLQHEUsUEU2zAnrGlxH7oFAlbZGXH4ueHQ==
@@ -228,7 +262,7 @@ And create the intermediate ca:
 
 ```console
 $ step certificate create --profile intermediate-ca \
-  --kms 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep?pin-value=password' \
+  --kms 'pkcs11:token=smallstep?pin-value=password' \
   --ca root_ca.crt --ca-key 'pkcs11:id=2000' \
   --key pkcs11:id=2001 \
   "Smallstep IntermediateCA" intermediate_ca.crt
@@ -238,17 +272,17 @@ Your certificate has been saved in intermediate_ca.crt.
 We can also create a CSR backed by a key in the KMS and sign it using the intermediate key:
 
 ```console
-$ step kms create 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep;id=2002;object=leaf?pin-value=password'
+$ step kms create 'pkcs11:token=smallstep;id=2002;object=leaf?pin-value=password'
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6fMBiDFPAOCrHSQszpoLMQX9JYuk
 JVX8J8X9t/OydimJAgBujwY8xRSgnWdU1SXXdMck+wPZZNBYvcWJWpLN9Q==
 -----END PUBLIC KEY-----
 $ step certificate create --csr \
-  --kms 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep?pin-value=password' \
+  --kms 'pkcs11:token=smallstep?pin-value=password' \
   --key pkcs11:id=2002 \
   leaf.internal leaf.csr
 Your certificate signing request has been saved in leaf.csr.
-$ step certificate sign --kms 'pkcs11:module-path=/usr/local/lib/softhsm/libsofthsm2.so;token=smallstep?pin-value=password' \
+$ step certificate sign --kms 'pkcs11:token=smallstep?pin-value=password' \
   leaf.csr intermediate_ca.crt pkcs11:id=2001
 -----BEGIN CERTIFICATE-----
 MIIBxTCCAWygAwIBAgIQeauacIrgtv7uPgzk+Z4puzAKBggqhkjOPQQDAjAjMSEw
