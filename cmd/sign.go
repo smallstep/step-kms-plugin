@@ -73,12 +73,19 @@ digest of the data file for you.`,
   # Sign the header and payload of a JWT to produce the signature:
   step-kms-plugin sign --in data.jwt --format jws \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
-  'pkcs11:id=1000`,
+  'pkcs11:id=1000
+ 
+  # Sign a file using a key in the default TPM KMS:
+  step-kms-plugin sign --in data.bin tpmkms:name=my-key
+
+  # Sign and verify using a key in the default TPM KMS:
+  step-kms-plugin sign --in data.bin --verify tpmkms:name=my-key`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if l := len(args); l != 1 && l != 2 {
 			return showErrUsage(cmd)
 		}
 
+		name := args[0]
 		flags := cmd.Flags()
 		alg := flagutil.MustString(flags, "alg")
 		pss := flagutil.MustBool(flags, "pss")
@@ -86,9 +93,9 @@ digest of the data file for you.`,
 		in := flagutil.MustString(flags, "in")
 		verify := flagutil.MustBool(flags, "verify")
 
-		kuri := flagutil.MustString(flags, "kms")
+		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
-			kuri = args[0]
+			kuri = name
 		}
 
 		km, err := kms.New(cmd.Context(), apiv1.Options{
@@ -100,7 +107,7 @@ digest of the data file for you.`,
 		defer km.Close()
 
 		signer, err := km.CreateSigner(&apiv1.CreateSignerRequest{
-			SigningKey: args[0],
+			SigningKey: name,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create signer: %w", err)

@@ -14,8 +14,12 @@
 package cmd
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/pemutil"
@@ -56,6 +60,31 @@ func showErrUsage(cmd *cobra.Command) error {
 	cmd.SilenceErrors = true
 	cmd.SilenceUsage = false
 	return errUsage
+}
+
+// ensureSchemePrefix checks if a (non-empty) KMS URI contains a
+// colon, indicating it contains a potentially valid KMS scheme.
+// If the KMS URI doesn't start with a scheme, the colon is suffixed.
+// This allows users to provide '--kms tpmkms' instead of requiring
+// '--kms tpmkms:', which results in a potentially confusing error
+// message.
+func ensureSchemePrefix(kuri string) string {
+	if kuri != "" && !strings.Contains(kuri, ":") {
+		kuri = fmt.Sprintf("%s:", kuri)
+	}
+	return kuri
+}
+
+// outputCert encodes an X.509 certificate to PEM format
+// and writes it to stdout.
+func outputCert(c *x509.Certificate) error {
+	if err := pem.Encode(os.Stdout, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: c.Raw,
+	}); err != nil {
+		return fmt.Errorf("failed to encode certificate: %w", err)
+	}
+	return nil
 }
 
 func init() {

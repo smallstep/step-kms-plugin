@@ -43,8 +43,8 @@ var attestCmd = &cobra.Command{
 	Use:   "attest <uri>",
 	Short: "create an attestation certificate",
 	Long: `Print an attestation certificate, an endorsement key, or if the "--format" flag
-is set, an attestation object. Currently this command is only supported on
-YubiKeys.
+is set, an attestation object. Currently this command is only supported with
+YubiKeys and the TPM KMS.
 
 An attestation object can be used to resolve an ACME device-attest-01 challenge.
 To pass this challenge, the client needs proof of possession of a private key by
@@ -57,18 +57,41 @@ account key fingerprint separated by a "." character:
   step-kms-plugin attest yubikey:slot-id=9c
 
   # Create an attestation object used in an ACME device-attest-01 flow:
-  echo -n <token>.<fingerprint> | step-kms-plugin attest --format step yubikey:slot-id=9c`,
+  echo -n <token>.<fingerprint> | step-kms-plugin attest --format step yubikey:slot-id=9c
+  
+  # Get the attestation certificate belonging to an Attestion Key, using the default TPM KMS:
+  step-kms-plugin attest 'tpmkms:name=my-ak;ak=true'
+
+  # Get the attestation certificate chain for an attested key, using the default TPM KMS:
+  step-kms-plugin attest tpmkms:name=my-attested-key
+
+  # Get the attestation certificate for an attested key, using the default TPM KMS:
+  step-kms-plugin attest --leaf tpmkms:name=my-attested-key
+
+  # Create an attestation statement for an attested key, using the default TPM KMS:
+  step-kms-plugin attest --format tpm tpmkms:name=my-attested-key
+
+  # Create an attestation statement for an attested key, using the default TPM KMS,
+  enrolling with a Smallstep Attestation CA if no AK certificate is available (yet):
+  step-kms-plugin attest --format tpm 'tpmkms:name=my-attested-key;attestation-ca-url=https://my.attestation.ca/url;attestation-ca-root=/path/to/trusted/roots.pem'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return showErrUsage(cmd)
 		}
 
+		name := args[0]
 		flags := cmd.Flags()
 		format := flagutil.MustString(flags, "format")
+		leaf := flagutil.MustBool(flags, "leaf")
 		in := flagutil.MustString(flags, "in")
-		kuri := flagutil.MustString(flags, "kms")
+		newKey := flagutil.MustBool(flags, "new")
+		kty := flagutil.MustString(flags, "kty")
+		crv := flagutil.MustString(flags, "crv")
+		size := flagutil.MustInt(flags, "size")
+		alg := flagutil.MustString(flags, "alg")
+		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
-			kuri = args[0]
+			kuri = name
 		}
 
 		km, err := kms.New(cmd.Context(), apiv1.Options{
@@ -79,13 +102,41 @@ account key fingerprint separated by a "." character:
 		}
 		defer km.Close()
 
+		if format == "tpm" && newKey {
+			if kty != "RSA" {
+				size = 0
+			}
+			// Do not set crv unless the flag is explicitly set by the user
+			if kty != "EC" && !flags.Changed("crv") {
+				crv = ""
+			}
+			signatureAlgorithm := getSignatureAlgorithm(kty, crv, alg, false)
+			if signatureAlgorithm == apiv1.UnspecifiedSignAlgorithm {
+				return fmt.Errorf("failed to get a signature algorithm with kty: %q, crv: %q, hash: %q", kty, crv, alg)
+			}
+
+			// TODO(hs): support reading the attesting data (key authorization / qualifying data)
+			// from stdin. Currently it needs to be provided as part of the key URI (e.g. qualifying-data=<hex>),
+			// for TPMs, but for the other formats, it is read from stdout. This would require
+			// a new property in the CreateKeyRequest, or changing the value of `name`.
+			resp, err := km.CreateKey(&apiv1.CreateKeyRequest{
+				Name:               name,
+				SignatureAlgorithm: signatureAlgorithm,
+				Bits:               size,
+			})
+			if err != nil {
+				return err
+			}
+			name = resp.Name // continue with updated name
+		}
+
 		attester, ok := km.(apiv1.Attester)
 		if !ok {
 			return fmt.Errorf("%s does not implement Attester", kuri)
 		}
 
 		resp, err := attester.CreateAttestation(&apiv1.CreateAttestationRequest{
-			Name: args[0],
+			Name: name,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to attest: %w", err)
@@ -93,38 +144,41 @@ account key fingerprint separated by a "." character:
 
 		switch {
 		case format != "":
-			data, err := getAttestationData(in)
-			if err != nil {
-				return err
+			var data []byte
+			var signer crypto.Signer
+			if format != "tpm" { // the tpm format doesn't require data to be signed
+				data, err = getAttestationData(in)
+				if err != nil {
+					return err
+				}
 			}
-			signer, err := km.CreateSigner(&apiv1.CreateSignerRequest{
-				SigningKey: args[0],
-			})
-			if err != nil {
+			if signer, err = km.CreateSigner(&apiv1.CreateSignerRequest{
+				SigningKey: name,
+			}); err != nil {
 				return fmt.Errorf("failed to get a signer: %w", err)
 			}
 			var certs []*x509.Certificate
-			if resp.Certificate != nil {
-				certs = append([]*x509.Certificate{}, resp.Certificate)
-				certs = append(certs, resp.CertificateChain...)
+			switch {
+			case len(resp.CertificateChain) > 0:
+				certs = resp.CertificateChain
+			case resp.Certificate != nil:
+				certs = []*x509.Certificate{resp.Certificate}
 			}
-			return printAttestationObject(format, certs, signer, data)
-		case resp.Certificate != nil:
-			if err := pem.Encode(os.Stdout, &pem.Block{
-				Type:  "CERTIFICATE",
-				Bytes: resp.Certificate.Raw,
-			}); err != nil {
-				return fmt.Errorf("failed to encode certificate: %w", err)
-			}
-			for _, c := range resp.CertificateChain {
-				if err := pem.Encode(os.Stdout, &pem.Block{
-					Type:  "CERTIFICATE",
-					Bytes: c.Raw,
-				}); err != nil {
-					return fmt.Errorf("failed to encode certificate chain: %w", err)
+			return printAttestationObject(format, certs, signer, data, resp.CertificationParameters)
+		case len(resp.CertificateChain) > 0:
+			switch {
+			case leaf:
+				return outputCert(resp.CertificateChain[0])
+			default:
+				for _, c := range resp.CertificateChain {
+					if err := outputCert(c); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
+		case resp.Certificate != nil:
+			return outputCert(resp.Certificate)
 		case resp.PublicKey != nil:
 			block, err := pemutil.Serialize(resp.PublicKey)
 			if err != nil {
@@ -157,7 +211,7 @@ func getAttestationData(in string) ([]byte, error) {
 	return io.ReadAll(os.Stdin)
 }
 
-func printAttestationObject(format string, certs []*x509.Certificate, signer crypto.Signer, data []byte) error {
+func printAttestationObject(format string, certs []*x509.Certificate, signer crypto.Signer, data []byte, params *apiv1.CertificationParameters) error {
 	var alg int64
 	var digest []byte
 	var opts crypto.SignerOpts
@@ -184,21 +238,36 @@ func printAttestationObject(format string, certs []*x509.Certificate, signer cry
 		return fmt.Errorf("unsupported public key type %T", k)
 	}
 
-	// Sign proves possession of private key. Per recommendation at
-	// https://w3c.github.io/webauthn/#sctn-signature-attestation-types, we use
-	// CBOR to encode the signature.
-	sig, err := signer.Sign(rand.Reader, digest, opts)
-	if err != nil {
-		return fmt.Errorf("failed to sign key authorization: %w", err)
-	}
-	sig, err = cbor.Marshal(sig)
-	if err != nil {
-		return fmt.Errorf("failed marshaling signature: %w", err)
-	}
-
 	stmt := map[string]interface{}{
 		"alg": alg,
-		"sig": sig,
+	}
+
+	switch format {
+	case "tpm":
+		// TPM key attestation is performed at key creation time. The key is attested by
+		// an Attestation Key (AK). The result of attesting a key can be recorded, so that
+		// the certification facts can be used at a later time to verify the key was created
+		// by a specific TPM.
+		if params == nil {
+			return errors.New("TPM key attestation requires CertificationParameters to be set")
+		}
+		stmt["ver"] = "2.0"
+		stmt["sig"] = params.CreateSignature // signature over the (empty) data is ignored for the tpm format
+		stmt["certInfo"] = params.CreateAttestation
+		stmt["pubArea"] = params.Public
+	default:
+		// Sign proves possession of private key. Per recommendation at
+		// https://w3c.github.io/webauthn/#sctn-signature-attestation-types, we use
+		// CBOR to encode the signature.
+		sig, err := signer.Sign(rand.Reader, digest, opts)
+		if err != nil {
+			return fmt.Errorf("failed to sign key authorization: %w", err)
+		}
+		sig, err = cbor.Marshal(sig)
+		if err != nil {
+			return fmt.Errorf("failed marshaling signature: %w", err)
+		}
+		stmt["sig"] = sig
 	}
 
 	if len(certs) > 0 {
@@ -230,7 +299,18 @@ func init() {
 	flags := attestCmd.Flags()
 	flags.SortFlags = false
 
-	format := flagutil.LowerValue("format", []string{"", "step", "packed"}, "")
-	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step or packed")
+	// TODO(hs): fix/validate valid values for TPM
+	kty := flagutil.UpperValue("kty", []string{"EC", "RSA"}, "RSA")
+	crv := flagutil.NormalizedValue("crv", []string{"P256", "P384", "P521"}, "P256")
+	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
+
+	format := flagutil.LowerValue("format", []string{"", "step", "packed", "tpm"}, "")
+	flags.Var(format, "format", "The `format` to print the attestation.\nOptions are step, packed or tpm")
+	flags.Bool("leaf", false, "Print only the leaf certificate in a chain")
+	flags.Bool("new", false, "(EXPERIMENTAL) Creates and attests a new key instead of attesting an existing one")
+	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC and RSA. Only used with TPMKMS.")
+	flags.Var(crv, "crv", "The elliptic `curve` to use for EC and OKP key types.\nOptions are P256, P384 and P521. Only used with TPMKMS.")
+	flags.Int("size", 2048, "The key size for an RSA key") // TODO(hs): attesting 3072 bit RSA keys on TPM that doesn't support it returns an ugly error; we want to catch that earlier.
+	flags.Var(alg, "alg", "The hashing `algorithm` to use with RSA PKCS #1 signatures.\nOptions are SHA256, SHA384 or SHA512. Only used with TPMKMS.")
 	flags.String("in", "", "The `file` to sign with an attestation format.")
 }

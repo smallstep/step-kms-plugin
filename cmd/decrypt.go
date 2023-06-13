@@ -73,10 +73,11 @@ Cloud KMS.`,
 			return showErrUsage(cmd)
 		}
 
+		name := args[0]
 		flags := cmd.Flags()
-		kuri := flagutil.MustString(flags, "kms")
+		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
-			kuri = args[0]
+			kuri = name
 		}
 
 		oaep := flagutil.MustBool(flags, "oaep")
@@ -143,7 +144,7 @@ Cloud KMS.`,
 		}
 
 		d, err := dec.CreateDecrypter(&apiv1.CreateDecrypterRequest{
-			DecryptionKey: args[0],
+			DecryptionKey: name,
 		})
 		if err != nil {
 			return err

@@ -77,7 +77,22 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   step-kms-plugin create --kty RSA --size 2048 yubikey:slot-id=82
 
   # Create an EC P-256 private key on a YubiKey with the touch policy "always" and pin policy "once":
-  step-kms-plugin create --touch-policy always --pin-policy once yubikey:slot-id=82`,
+  step-kms-plugin create --touch-policy always --pin-policy once yubikey:slot-id=82
+  
+  # Create an Attestation Key (AK) in the default TPM KMS:
+  step-kms-plugin create 'tpmkms:name=my-ak;ak=true' --kty RSA --size 2048
+
+  # Create an EC P-256 private key in the default TPM KMS:
+  step-kms-plugin create tpmkms:name=my-ec-key
+
+  # Create an EC P-256 private key in the TPM KMS, backed by /tmp/tpmobjects:
+  step-kms-plugin create my-tmp-ec-key --kms tpmkms:storage-directory=/tmp/tpmobjects
+
+  # Create an RSA 4096 bits private key in the default TPM KMS:
+  step-kms-plugin create tpmkms:name=my-rsa-key --kty RSA --size 4096
+
+  # Create an EC P-256 private key, attested by an AK, in the default TPM KMS:
+  step-kms-plugin create 'tpmkms:name=my-ec-key;attest-by=my-ak'`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
@@ -85,7 +100,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		}
 
 		flags := cmd.Flags()
-
+		name := args[0]
 		kty := flagutil.MustString(flags, "kty")
 		crv := flagutil.MustString(flags, "crv")
 		size := flagutil.MustInt(flags, "size")
@@ -114,9 +129,9 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 			return fmt.Errorf("unsupported protection level: %q", pl)
 		}
 
-		kuri := flagutil.MustString(flags, "kms")
+		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
-			kuri = args[0]
+			kuri = name
 		}
 
 		cmd.SilenceUsage = true
@@ -129,7 +144,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		defer km.Close()
 
 		resp, err := km.CreateKey(&apiv1.CreateKeyRequest{
-			Name:               args[0],
+			Name:               name,
 			SignatureAlgorithm: signatureAlgorithm,
 			Bits:               size,
 			ProtectionLevel:    protectionLevel,
@@ -160,7 +175,6 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		}
 
 		if flagutil.MustBool(flags, "json") {
-
 			b, err := json.MarshalIndent(map[string]string{
 				"name":      resp.Name,
 				"publicKey": string(pem.EncodeToMemory(block)),
