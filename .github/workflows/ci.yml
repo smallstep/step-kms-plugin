@@ -17,6 +17,7 @@ jobs:
   ci:
     uses: smallstep/workflows/.github/workflows/goCI.yml@main
     with:
+      only-latest-golang: false
       os-dependencies: "libpcsclite-dev"
       run-codeql: true
     secrets: inherit
