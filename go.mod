@@ -6,7 +6,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
-	go.step.sm/crypto v0.32.3
+	go.step.sm/crypto v0.32.4
 	golang.org/x/crypto v0.11.0
 	golang.org/x/term v0.10.0
 )
