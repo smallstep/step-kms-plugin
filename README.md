@@ -48,8 +48,8 @@ The commands under `step kms` will directly call `step-kms-plugin` with the
 given arguments. For example, these two commands are equivalent:
 
 ```console
-step kms create --kty EC --crv P384 'pkcs11:token=smallstep;id=1000;object=mykey?pin-value=password'
-step-kms-plugin create --kty EC --crv P384 'pkcs11:token=smallstep;id=1000;object=mykey?pin-value=password'
+step kms create --kty EC --crv P384 'pkcs11:token=smallstep;id=1000;object=mykey?pin-source=/dev/shm/pass.txt'
+step-kms-plugin create --kty EC --crv P384 'pkcs11:token=smallstep;id=1000;object=mykey?pin-source=/dev/shm/pass.txt'
 ```
 
 For the rest of the examples, we are going to use the plugin usage, `step kms`,
