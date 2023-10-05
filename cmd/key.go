@@ -50,14 +50,14 @@ var keyCmd = &cobra.Command{
   step-kms-plugin key 'azurekms:vault=my-key-vault;name=my-key'
 
   # Get the public key key from AWS KMS.
-  step-kms-plugin key 'awskms:key-id=acbebc8f-822d-4c1c-b5d1-eb3a8fcaced7;region=us-west-1' //gitleaks:allow
+  step-kms-plugin key 'awskms:key-id=acbebc8f-822d-4c1c-b5d1-eb3a8fcaced7;region=us-west-1'
 
   # Get key from a YubiKey:
   step-kms-plugin key yubikey:slot-id=82
 
   # Get a key from the ssh-agent:
   step-kms-plugin key sshagentkms:user@localhost
-  
+
   # Get a key from the default TPM KMS with KMS URI:
   step-kms-plugin key my-key --kms tpmkms
 
@@ -66,7 +66,7 @@ var keyCmd = &cobra.Command{
 
   # Get a key from the default TPM KMS:
   step-kms-plugin key tpmkms:name=my-key
-  
+
   # Get an AK public key from the default TPM KMS:
   step-kms-plugin key 'tpmkms:name=my-ak;ak=true'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
