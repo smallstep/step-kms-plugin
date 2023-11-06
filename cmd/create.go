@@ -23,7 +23,9 @@ import (
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/kms/softkms"
+	"go.step.sm/crypto/kms/tpmkms"
 	"go.step.sm/crypto/pemutil"
+	"go.step.sm/crypto/tpm/tss2"
 
 	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/smallstep/step-kms-plugin/internal/termutil"
@@ -165,6 +167,18 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 			}
 			if err := termutil.WriteFile(resp.Name, pem.EncodeToMemory(block), 0600); err != nil {
 				return fmt.Errorf("failed to write the private key: %w", err)
+			}
+		}
+
+		// Print TSS2 private key if available. Currently if "tss2=true" is added to the URI.
+		if _, ok := km.(*tpmkms.TPMKMS); ok && resp.PrivateKey != nil {
+			if key, ok := resp.PrivateKey.(*tss2.TPMKey); ok {
+				b, err := key.EncodeToMemory()
+				if err != nil {
+					return fmt.Errorf("failed to serialize the private key: %w", err)
+				}
+				fmt.Print(string(b))
+				return nil
 			}
 		}
 
