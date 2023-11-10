@@ -95,7 +95,6 @@ builds:
 
 archives:
   - id: step-kms-plugin
-    rlcp: true
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     format_overrides:
       - goos: windows
