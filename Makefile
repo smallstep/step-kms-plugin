@@ -1,6 +1,6 @@
 PKG?=github.com/smallstep/step-kms-plugin
 BINNAME?=step-kms-plugin
-GOLANG_CROSS_VERSION?=v1.20.5
+GOLANG_CROSS_VERSION?=v1.21.4
 
 # Set V to 1 for verbose output from the Makefile
 Q=$(if $V,,@)
@@ -120,7 +120,7 @@ release-dry-run:
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
 		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		--clean --skip-validate --skip-publish
+		--clean --skip=validate --skip=publish
 
 release:
 	@if [ ! -f ".release-env" ]; then \
