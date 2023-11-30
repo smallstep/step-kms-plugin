@@ -59,22 +59,19 @@ var certificateCmd = &cobra.Command{
 			return showErrUsage(cmd)
 		}
 
-		name := args[0]
 		flags := cmd.Flags()
 		certFile := flagutil.MustString(flags, "import")
 		bundle := flagutil.MustBool(flags, "bundle")
 
-		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
-		if kuri == "" {
-			kuri = name
+		kuri, name, err := getUriAndNameForFS(flagutil.MustString(flags, "kms"), args[0])
+		if err != nil {
+			return err
 		}
 
 		// Read a certificate using the CertFS.
 		if certFile == "" {
 			if bundle {
-				km, err := kms.New(cmd.Context(), apiv1.Options{
-					URI: kuri,
-				})
+				km, err := openKMS(cmd.Context(), kuri)
 				if err != nil {
 					return fmt.Errorf("failed to load key manager: %w", err)
 				}
@@ -122,9 +119,7 @@ var certificateCmd = &cobra.Command{
 		}
 		cert := certs[0]
 
-		km, err := kms.New(cmd.Context(), apiv1.Options{
-			URI: kuri,
-		})
+		km, err := openKMS(cmd.Context(), kuri)
 		if err != nil {
 			return fmt.Errorf("failed to load key manager: %w", err)
 		}

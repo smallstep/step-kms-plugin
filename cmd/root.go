@@ -14,14 +14,21 @@
 package cmd
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"go.step.sm/cli-utils/step"
+	"go.step.sm/crypto/kms"
+	"go.step.sm/crypto/kms/apiv1"
+	"go.step.sm/crypto/kms/uri"
 	"go.step.sm/crypto/pemutil"
 
 	"github.com/smallstep/step-kms-plugin/internal/termutil"
@@ -62,6 +69,51 @@ func showErrUsage(cmd *cobra.Command) error {
 	return errUsage
 }
 
+// openKMS is a helper on top of kms.New that can set custom options depending
+// on the KMS type.
+func openKMS(ctx context.Context, kuri string) (apiv1.KeyManager, error) {
+	typ, err := apiv1.TypeOf(kuri)
+	if err != nil {
+		return nil, err
+	}
+
+	var storageDirectory string
+	if typ == apiv1.TPMKMS {
+		if err := step.Init(); err != nil {
+			return nil, err
+		}
+		storageDirectory = filepath.Join(step.Path(), "tpm")
+	}
+
+	// Type is not necessary, but it avoids an extra validation
+	return kms.New(ctx, apiv1.Options{
+		Type:             typ,
+		URI:              kuri,
+		StorageDirectory: storageDirectory,
+	})
+}
+
+// changeURI adds extra parameters to the given uri.
+//
+// If the given values are already in the rawuri, they will take preference.
+func changeURI(rawuri string, values url.Values) (string, error) {
+	u, err := uri.Parse(rawuri)
+	if err != nil {
+		return "", err
+	}
+
+	// Modify RawQuery with the given values
+	v := u.Query()
+	for k, vs := range values {
+		for _, vv := range vs {
+			v.Add(k, vv)
+		}
+	}
+	u.RawQuery = v.Encode()
+
+	return u.String(), nil
+}
+
 // ensureSchemePrefix checks if a (non-empty) KMS URI contains a
 // colon, indicating it contains a potentially valid KMS scheme.
 // If the KMS URI doesn't start with a scheme, the colon is suffixed.
@@ -73,6 +125,34 @@ func ensureSchemePrefix(kuri string) string {
 		kuri = fmt.Sprintf("%s:", kuri)
 	}
 	return kuri
+}
+
+// getUriAndNameForFS returns the kuri and name to be used by a KMS FS. If TPM
+// KMS is used it changes the kuri to add the default storage directory.
+//
+// If a storage-directory is already in the kuri, this will take preference.
+func getUriAndNameForFS(kuri, name string) (string, string, error) {
+	kuri = ensureSchemePrefix(kuri)
+	if kuri == "" {
+		kuri = name
+	}
+
+	typ, err := apiv1.TypeOf(kuri)
+	if err != nil {
+		return "", "", err
+	}
+
+	if typ == apiv1.TPMKMS {
+		if err = step.Init(); err != nil {
+			return "", "", err
+		}
+		kuri, err = changeURI(kuri, url.Values{"storage-directory": []string{filepath.Join(step.Path(), "tpm")}})
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	return kuri, name, nil
 }
 
 // outputCert encodes an X.509 certificate to PEM format

@@ -77,11 +77,11 @@ var keyCmd = &cobra.Command{
 			return showErrUsage(cmd)
 		}
 
-		name := args[0]
 		flags := cmd.Flags()
-		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
-		if kuri == "" {
-			kuri = name
+
+		kuri, name, err := getUriAndNameForFS(flagutil.MustString(flags, "kms"), args[0])
+		if err != nil {
+			return err
 		}
 
 		fsys, err := kms.KeyFS(cmd.Context(), kuri)

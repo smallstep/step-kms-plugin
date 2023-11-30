@@ -14,13 +14,15 @@
 package cmd
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/kms/softkms"
 	"go.step.sm/crypto/kms/tpmkms"
@@ -39,8 +41,8 @@ var createCmd = &cobra.Command{
 
 This command creates a new asymmetric key pair on the KMS. By default,
 it creates an EC P-256 key, but the --kty, --crv and --size flags can be
-combined to adjust the key properties. RSA and EC keys are boardly
-supported, but as of mid-2022 Ed25519 (OKP) support is very limited.
+combined to adjust the key properties. RSA and EC keys are broadly
+supported, but as of 2023 Ed25519 (OKP) support is very limited.
 
 For keys in AWS KMS, we recommend using --json for output, as you will need the
 generated key-id.
@@ -84,8 +86,8 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   # Create an Attestation Key (AK) in the default TPM KMS:
   step-kms-plugin create 'tpmkms:name=my-ak;ak=true' --kty RSA --size 2048
 
-  # Create an EC P-256 private key in the default TPM KMS:
-  step-kms-plugin create tpmkms:name=my-ec-key
+  # Create an EC P-256 private key in the default TPM KMS and print it using the TSS2 PEM format:
+  step-kms-plugin create --format TSS2 tpmkms:name=my-ec-key
 
   # Create an EC P-256 private key in the TPM KMS, backed by /tmp/tpmobjects:
   step-kms-plugin create my-tmp-ec-key --kms tpmkms:storage-directory=/tmp/tpmobjects
@@ -128,7 +130,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 
 		protectionLevel := getProtectionLevel(pl)
 		if protectionLevel == apiv1.UnspecifiedProtectionLevel {
-			return fmt.Errorf("unsupported protection level: %q", pl)
+			return fmt.Errorf("unsupported protection level %q", pl)
 		}
 
 		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
@@ -137,13 +139,20 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		}
 
 		cmd.SilenceUsage = true
-		km, err := kms.New(cmd.Context(), apiv1.Options{
-			URI: kuri,
-		})
+		km, err := openKMS(cmd.Context(), kuri)
 		if err != nil {
 			return fmt.Errorf("failed to load key manager: %w", err)
 		}
 		defer km.Close()
+
+		if _, ok := km.(*tpmkms.TPMKMS); ok {
+			if flagutil.MustString(flags, "format") == "TSS2" {
+				name, err = changeURI(name, url.Values{"tss2": []string{"true"}})
+				if err != nil {
+					return fmt.Errorf("failed to parse %q: %w", name, err)
+				}
+			}
+		}
 
 		resp, err := km.CreateKey(&apiv1.CreateKeyRequest{
 			Name:               name,
@@ -170,39 +179,64 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 			}
 		}
 
-		// Print TSS2 private key if available. Currently if "tss2=true" is added to the URI.
-		if _, ok := km.(*tpmkms.TPMKMS); ok && resp.PrivateKey != nil {
-			if key, ok := resp.PrivateKey.(*tss2.TPMKey); ok {
-				b, err := key.EncodeToMemory()
-				if err != nil {
-					return fmt.Errorf("failed to serialize the private key: %w", err)
-				}
-				fmt.Print(string(b))
-				return nil
-			}
-		}
+		return printCreateKeyResponse(cmd, resp)
+	},
+}
 
-		// Print the public key
+func printCreateKeyResponse(cmd *cobra.Command, resp *apiv1.CreateKeyResponse) error {
+	var (
+		s            string
+		isPrivateKey bool
+		flags        = cmd.Flags()
+	)
+
+	switch flagutil.MustString(flags, "format") {
+	case "PKCS1":
+		if key, ok := resp.PublicKey.(*rsa.PublicKey); ok {
+			s = string(pem.EncodeToMemory(&pem.Block{
+				Type: "RSA PUBLIC KEY", Bytes: x509.MarshalPKCS1PublicKey(key),
+			}))
+		}
+	case "TSS2":
+		if key, ok := resp.PrivateKey.(*tss2.TPMKey); ok {
+			b, err := key.EncodeToMemory()
+			if err != nil {
+				return fmt.Errorf("failed to serialize the private key: %w", err)
+			}
+			s = string(b)
+			isPrivateKey = true
+		}
+	}
+
+	// Encode public key using PKIX format
+	if s == "" {
 		block, err := pemutil.Serialize(resp.PublicKey)
 		if err != nil {
 			return fmt.Errorf("failed to serialize the public key: %w", err)
 		}
+		s = string(pem.EncodeToMemory(block))
+	}
 
-		if flagutil.MustBool(flags, "json") {
-			b, err := json.MarshalIndent(map[string]string{
-				"name":      resp.Name,
-				"publicKey": string(pem.EncodeToMemory(block)),
-			}, "", "  ")
-			if err != nil {
-				return fmt.Errorf("failed to marshal: %w", err)
-			}
-			fmt.Println(string(b))
+	if flagutil.MustBool(flags, "json") {
+		m := map[string]string{
+			"name": resp.Name,
+		}
+		if isPrivateKey {
+			m["privateKey"] = s
 		} else {
-			fmt.Print(string(pem.EncodeToMemory(block)))
+			m["publicKey"] = s
 		}
 
-		return nil
-	},
+		b, err := json.MarshalIndent(m, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal: %w", err)
+		}
+		fmt.Println(string(b))
+	} else {
+		fmt.Print(s)
+	}
+
+	return nil
 }
 
 type rsaParams struct {
@@ -288,6 +322,7 @@ func init() {
 	kty := flagutil.UpperValue("kty", []string{"EC", "RSA", "OKP"}, "EC")
 	crv := flagutil.NormalizedValue("crv", []string{"P256", "P384", "P521", "Ed25519"}, "P256")
 	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
+	format := flagutil.NormalizedValue("format", []string{"PKIX", "PKCS1", "TSS2"}, "PKIX")
 	protectionLevel := flagutil.UpperValue("protection-level", []string{"SOFTWARE", "HSM"}, "SOFTWARE")
 	pinPolicy := flagutil.UpperValue("pin-policy", []string{"NEVER", "ALWAYS", "ONCE"}, "")
 	touchPolicy := flagutil.UpperValue("touch-policy", []string{"NEVER", "ALWAYS", "CACHED"}, "")
@@ -301,5 +336,6 @@ func init() {
 	flags.Var(touchPolicy, "touch-policy", "The touch `policy` used on YubiKey KMS.\nOptions are NEVER, ALWAYS or CACHED")
 	flags.Bool("pss", false, "Use RSA-PSS signature scheme instead of PKCS #1")
 	flags.Bool("extractable", false, "Mark the new key as extractable")
+	flags.Var(format, "format", "The `format` to use in the output.\nOptions are PKIX, PKCS1 or TSS2")
 	flags.Bool("json", false, "Show the output using JSON")
 }
