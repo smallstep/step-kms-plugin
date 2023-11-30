@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//nolint:gocritic,errorlint // this file is borrowed from age
+//nolint:gocritic,revive // this file is borrowed from age
 package termutil
 
 import (
@@ -55,7 +55,7 @@ func withTerminal(f func(in, out *os.File) error) error {
 	} else if term.IsTerminal(int(os.Stdin.Fd())) {
 		return f(os.Stdin, os.Stdin)
 	} else {
-		return fmt.Errorf("standard input is not a terminal, and /dev/tty is not available: %v", err)
+		return fmt.Errorf("standard input is not a terminal, and /dev/tty is not available: %w", err)
 	}
 }
 

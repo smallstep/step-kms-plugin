@@ -63,7 +63,7 @@ var certificateCmd = &cobra.Command{
 		certFile := flagutil.MustString(flags, "import")
 		bundle := flagutil.MustBool(flags, "bundle")
 
-		kuri, name, err := getUriAndNameForFS(flagutil.MustString(flags, "kms"), args[0])
+		kuri, name, err := getURIAndNameForFS(flagutil.MustString(flags, "kms"), args[0])
 		if err != nil {
 			return err
 		}

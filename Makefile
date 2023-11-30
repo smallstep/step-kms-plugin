@@ -94,12 +94,16 @@ test:
 fmt:
 	$Q goimports --local github.com/smallstep/step-kms-plugin  -l -w $(SRC)
 
-lint: SHELL:=/bin/bash
-lint:
+lint: golint govulncheck
+
+golint: SHELL:=/bin/bash
+golint:
 	$Q LOG_LEVEL=error golangci-lint run --config <(curl -s https://raw.githubusercontent.com/smallstep/workflows/master/.golangci.yml) --timeout=30m
+
+govulncheck:
 	$Q govulncheck ./...
 
-.PHONY: fmt lint
+.PHONY: fmt lint golint govulncheck
 
 #########################################
 # Release
@@ -120,7 +124,7 @@ release-dry-run:
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
 		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		--clean --skip-validate --skip-publish
+		--clean --skip=validate --skip=publish
 
 release:
 	@if [ ! -f ".release-env" ]; then \

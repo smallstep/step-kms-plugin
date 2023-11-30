@@ -127,11 +127,11 @@ func ensureSchemePrefix(kuri string) string {
 	return kuri
 }
 
-// getUriAndNameForFS returns the kuri and name to be used by a KMS FS. If TPM
+// getURIAndNameForFS returns the kuri and name to be used by a KMS FS. If TPM
 // KMS is used it changes the kuri to add the default storage directory.
 //
 // If a storage-directory is already in the kuri, this will take preference.
-func getUriAndNameForFS(kuri, name string) (string, string, error) {
+func getURIAndNameForFS(kuri, name string) (string, string, error) {
 	kuri = ensureSchemePrefix(kuri)
 	if kuri == "" {
 		kuri = name
@@ -143,7 +143,7 @@ func getUriAndNameForFS(kuri, name string) (string, string, error) {
 	}
 
 	if typ == apiv1.TPMKMS {
-		if err = step.Init(); err != nil {
+		if err := step.Init(); err != nil {
 			return "", "", err
 		}
 		kuri, err = changeURI(kuri, url.Values{"storage-directory": []string{filepath.Join(step.Path(), "tpm")}})

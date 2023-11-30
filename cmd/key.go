@@ -79,7 +79,7 @@ var keyCmd = &cobra.Command{
 
 		flags := cmd.Flags()
 
-		kuri, name, err := getUriAndNameForFS(flagutil.MustString(flags, "kms"), args[0])
+		kuri, name, err := getURIAndNameForFS(flagutil.MustString(flags, "kms"), args[0])
 		if err != nil {
 			return err
 		}
