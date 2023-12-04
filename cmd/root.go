@@ -95,7 +95,7 @@ func openKMS(ctx context.Context, kuri string) (apiv1.KeyManager, error) {
 
 // changeURI adds extra parameters to the given uri.
 //
-// If the given values are already in the rawuri, they will take preference.
+// If the given values are already in the rawuri, the new values will take preference.
 func changeURI(rawuri string, values url.Values) (string, error) {
 	u, err := uri.Parse(rawuri)
 	if err != nil {
@@ -128,7 +128,7 @@ func ensureSchemePrefix(kuri string) string {
 }
 
 // getURIAndNameForFS returns the kuri and name to be used by a KMS FS. If TPM
-// KMS is used it changes the kuri to add the default storage directory.
+// KMS is used, it changes the kuri to add the default storage directory.
 //
 // If a storage-directory is already in the kuri, this will take preference.
 func getURIAndNameForFS(kuri, name string) (string, string, error) {
