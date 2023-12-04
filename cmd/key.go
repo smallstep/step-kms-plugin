@@ -67,6 +67,9 @@ var keyCmd = &cobra.Command{
   # Get a key from the default TPM KMS:
   step-kms-plugin key tpmkms:name=my-key
 
+  # Get a key from the TSS2 PEM file:
+  step-kms-plugin key tpmkms:path=tss2.pem
+
   # Get an AK public key from the default TPM KMS:
   step-kms-plugin key 'tpmkms:name=my-ak;ak=true'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -74,11 +77,11 @@ var keyCmd = &cobra.Command{
 			return showErrUsage(cmd)
 		}
 
-		name := args[0]
 		flags := cmd.Flags()
-		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
-		if kuri == "" {
-			kuri = name
+
+		kuri, name, err := getURIAndNameForFS(flagutil.MustString(flags, "kms"), args[0])
+		if err != nil {
+			return err
 		}
 
 		fsys, err := kms.KeyFS(cmd.Context(), kuri)

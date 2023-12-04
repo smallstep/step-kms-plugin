@@ -31,7 +31,6 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/spf13/cobra"
-	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/pemutil"
 
@@ -94,9 +93,7 @@ account key fingerprint separated by a "." character:
 			kuri = name
 		}
 
-		km, err := kms.New(cmd.Context(), apiv1.Options{
-			URI: kuri,
-		})
+		km, err := openKMS(cmd.Context(), kuri)
 		if err != nil {
 			return fmt.Errorf("failed to load key manager: %w", err)
 		}

@@ -25,7 +25,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 
 	"github.com/smallstep/step-kms-plugin/internal/flagutil"
@@ -130,9 +129,7 @@ Cloud KMS.`,
 			data = data[:n]
 		}
 
-		km, err := kms.New(cmd.Context(), apiv1.Options{
-			URI: kuri,
-		})
+		km, err := openKMS(cmd.Context(), kuri)
 		if err != nil {
 			return fmt.Errorf("failed to load key manager: %w", err)
 		}
