@@ -95,7 +95,8 @@ func openKMS(ctx context.Context, kuri string) (apiv1.KeyManager, error) {
 
 // changeURI adds extra parameters to the given uri.
 //
-// If the given values are already in the rawuri, the new values will take preference.
+// If the given values are already in the rawuri, the new values will take
+// preference.
 func changeURI(rawuri string, values url.Values) (string, error) {
 	u, err := uri.Parse(rawuri)
 	if err != nil {
