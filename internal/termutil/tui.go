@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//nolint:gocritic,errorlint // this file is borrowed from age
+//nolint:gocritic // this file is borrowed from age
 package termutil
 
 import (
@@ -49,14 +49,22 @@ func withTerminal(f func(in, out *os.File) error) error {
 		}
 		defer out.Close()
 		return f(in, out)
-	} else if tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0); err == nil {
+	}
+
+	var (
+		tty *os.File
+		err error
+	)
+	if tty, err = os.OpenFile("/dev/tty", os.O_RDWR, 0); err == nil {
 		defer tty.Close()
 		return f(tty, tty)
-	} else if term.IsTerminal(int(os.Stdin.Fd())) {
-		return f(os.Stdin, os.Stdin)
-	} else {
-		return fmt.Errorf("standard input is not a terminal, and /dev/tty is not available: %v", err)
 	}
+
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		return f(os.Stdin, os.Stdin)
+	}
+
+	return fmt.Errorf("standard input is not a terminal, and /dev/tty is not available: %w", err)
 }
 
 // ReadPassword reads a value from the terminal with no echo. The prompt is
