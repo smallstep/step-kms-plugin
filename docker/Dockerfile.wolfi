@@ -1,0 +1,18 @@
+FROM cgr.dev/chainguard/wolfi-base:latest AS builder
+
+WORKDIR /src
+COPY . .
+
+RUN apk update
+RUN apk add git make pkgconf gcc go
+RUN make V=1 build-fips
+
+FROM cgr.dev/chainguard/wolfi-base:latest
+
+COPY --from=builder /src/bin/step-kms-plugin /usr/bin/step-kms-plugin
+
+USER root
+RUN apk update
+RUN apk add p11-kit
+
+CMD ["/bin/sh"]
