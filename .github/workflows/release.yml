@@ -19,12 +19,14 @@ jobs:
       DOCKER_IMAGE: smallstep/step-kms-plugin
       CLOUD_TAG: cloud
       DEBIAN_TAG: bullseye
+      WOLFI_TAG: wolfi
     outputs:
       version: ${{ steps.extract-tag.outputs.VERSION }}
       is_prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
       docker_tags: ${{ env.DOCKER_TAGS }}
       docker_tags_cloud: ${{ env.DOCKER_TAGS_CLOUD }}
       docker_tags_debian: ${{ env.DOCKER_TAGS_DEBIAN }}
+      docker_tags_wolfi: ${{ env.DOCKER_TAGS_WOLFI }}
     steps:
       - name: Is Pre-release
         id: is_prerelease
@@ -43,6 +45,7 @@ jobs:
           echo "DOCKER_TAGS=${{ env.DOCKER_IMAGE }}:${VERSION}" >> "${GITHUB_ENV}"
           echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE }}:${VERSION}-${CLOUD_TAG}" >> "${GITHUB_ENV}"
           echo "DOCKER_TAGS_DEBIAN=${{ env.DOCKER_IMAGE }}:${VERSION}-${DEBIAN_TAG}" >> "${GITHUB_ENV}"
+          echo "DOCKER_TAGS_WOLFI=${{ env.DOCKER_IMAGE }}:${VERSION}-${WOLFI_TAG}" >> "${GITHUB_ENV}"
       - name: Add Latest Tag
         if: steps.is_prerelease.outputs.IS_PRERELEASE == 'false'
         run: |
@@ -50,6 +53,7 @@ jobs:
           echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},${{ env.DOCKER_IMAGE }}:latest" >> "${GITHUB_ENV}"
           echo "DOCKER_TAGS_CLOUD=${{ env.DOCKER_IMAGE }}:${CLOUD_TAG}" >> "${GITHUB_ENV}"
           echo "DOCKER_TAGS_DEBIAN=${{ env.DOCKER_IMAGE }}:${DEBIAN_TAG}" >> "${GITHUB_ENV}"
+          echo "DOCKER_TAGS_WOLFI=${{ env.DOCKER_IMAGE }}:${WOLFI_TAG}" >> "${GITHUB_ENV}"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -116,4 +120,18 @@ jobs:
       tags: ${{ needs.create_release.outputs.docker_tags_cloud }}
       docker_image: smallstep/step-kms-plugin
       docker_file: docker/Dockerfile.cloud
+    secrets: inherit
+
+  build_upload_docker_wolfi:
+    name: Build & Upload Wolfi Docker Image
+    needs: create_release
+    permissions:
+      id-token: write
+      contents: write
+    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+    with:
+      platforms: linux/amd64
+      tags: ${{ needs.create_release.outputs.docker_tags_wolfi }}
+      docker_image: smallstep/step-kms-plugin
+      docker_file: docker/Dockerfile.wolfi
     secrets: inherit

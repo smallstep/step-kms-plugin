@@ -62,7 +62,11 @@ build:
 	$Q go build -v -o $(PREFIX)bin/$(BINNAME) $(LDFLAGS) $(PKG)
 	@echo "Build Complete!"
 
-.PHONY: build
+build-fips:
+	$Q GOEXPERIMENT="boringcrypto" go build -v -tags fips,noyubikey -o $(PREFIX)bin/$(BINNAME) $(LDFLAGS) $(PKG)
+	@echo "Build Complete!"
+
+.PHONY: build build-fips
 
 #########################################
 # Go generate
