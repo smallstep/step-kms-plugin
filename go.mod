@@ -7,7 +7,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	go.step.sm/cli-utils v0.8.0
-	go.step.sm/crypto v0.38.0
+	go.step.sm/crypto v0.39.0
 	golang.org/x/crypto v0.16.0
 	golang.org/x/term v0.15.0
 )
@@ -28,7 +28,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/ThalesIgnite/crypto11 v1.2.5 // indirect
-	github.com/aws/aws-sdk-go v1.48.7 // indirect
+	github.com/aws/aws-sdk-go v1.48.12 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
 	github.com/go-piv/piv-go v1.11.0 // indirect
