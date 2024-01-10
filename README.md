@@ -24,7 +24,7 @@ add it to your `$PATH` or to `$(step path --base)/plugins`.
 
 ## Supported KMSs
 
-The following "Key Management Systems" or KMSs are supported, but not all of
+The following Key Management Systems (KMSs) are supported, but not all of
 them provide the full functionality:
 
 * PKCS #11 modules
@@ -35,9 +35,68 @@ them provide the full functionality:
 * [YubiKey PIV](https://developers.yubico.com/PIV/)
 * ssh-agent
 
-## Usage with `step-ca`
+## Setting up `step-ca`?
 
 If you're setting up a `step-ca` PKI on one of the supported KMSs, check out our [detailed tutorials in our Cryptographic Protection docs](https://smallstep.com/docs/step-ca/configuration/#cryptographic-protection).
+
+## Authenticating to a Cloud KMS provider
+
+If you use `step-kms-plugin` with a cloud provider, you will need to authenticate to the cloud provider.
+Here are the required API permissions and authentication methods for each provider.
+
+### AWS KMS
+
+`step-kms-plugin` authenticates to AWS using the same approach as any AWS Go SDK program.
+See the [AWS Go SDK documentation] for details.
+
+```
+kms:GetPublicKey
+kms:CreateKey
+kms:CreateAlias
+kms:Sign
+```
+
+Notes:
+* [AWS Docs: IAM Policies relating to KMS keys](https://docs.aws.amazon.com/kms/latest/developerguide/cmks-in-iam-policies.html)
+
+### Azure Key Vault
+
+Authentication to Azure is handled via environment variables; we recommend using either [file-based authentication](https://docs.microsoft.com/en-us/azure/developer/go/azure-sdk-authorization#use-file-based-authentication) via the `AZURE_AUTH_LOCATION` environment variable, or using a managed identity and setting the `AZURE_TENANT_ID` and `AZURE_CLIENT_ID` variables when running `step-kms-plugin`
+
+Alternatively, you can create a [service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) and set the `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and `AZURE_CLIENT_SECRET` variables. See Option 1 under [Authentication Methods for Azure SDK for Go](https://docs.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication?tabs=bash#-option-1-define-environment-variables) for examples of authentication methods and environment variables.
+
+For local development and testing, Azure CLI credentials are used if no authentication environment variables are set.
+
+```
+GetKey
+CreateKey
+Sign
+```
+
+Notes:
+* Azure has several built-in [RBAC roles for Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/rbac-guide?tabs=azure-cli#azure-built-in-roles-for-key-vault-data-plane-operations).
+* You can restrict permissions to the vaults that you will use `step-kms-plugin` with.
+
+### Google Cloud KMS
+
+To authenticate, be sure you have installed [the `gcloud` CLI](https://cloud.google.com/sdk/docs/install) and have [configured Google Cloud application default credentials](https://developers.google.com/accounts/docs/application-default-credentials) in your local environment, eg. by running `gcloud auth application-default login`.
+
+```
+cloudkms.cryptoKeyVersions.create
+cloudkms.cryptoKeyVersions.get
+cloudkms.cryptoKeyVersions.useToDecrypt
+cloudkms.cryptoKeyVersions.useToSign
+cloudkms.cryptoKeyVersions.useToVerify
+cloudkms.cryptoKeyVersions.viewPublicKey
+cloudkms.keyRings.get
+cloudkms.keyRings.create
+cloudkms.locations.get
+resourcemanager.projects.get
+```
+
+Notes:
+* It is recommended that you scope the IAM role permissions to specific key rings
+* When creating a key, if the key ring does not exist, `step-kms-plugin` will attempt to create it first.
 
 ## General Usage
 
@@ -297,3 +356,4 @@ A0cAMEQCICWSdIWIStDm5OJqBlqo1fd4lpzkcM0AOQcCwer+AgO1AiAF3sK+26LI
 mX6QduO/H/k8GZzcx923U54bRPCxKUaPvg==
 -----END CERTIFICATE-----
 ```
+
