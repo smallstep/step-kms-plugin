@@ -47,7 +47,9 @@ Here are the required API permissions and authentication methods for each provid
 ### AWS KMS
 
 `step-kms-plugin` authenticates to AWS using the same approach as any AWS Go SDK program.
-See the [AWS Go SDK documentation] for details.
+See the [AWS Go SDK documentation](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials) for details.
+
+The following IAM role Actions may be required by `step-kms-plugin`:
 
 ```
 kms:GetPublicKey
@@ -67,21 +69,26 @@ Alternatively, you can create a [service principal](https://docs.microsoft.com/e
 
 For local development and testing, Azure CLI credentials are used if no authentication environment variables are set.
 
+These are the Azure RBAC role actions used by `step-kms-plugin`:
+
 ```
-GetKey
-CreateKey
-Sign
+Key Vault Crypto Officer
+Key Vault Secrets Officer
+Key Vault Certificates Officer
 ```
 
 Notes:
+* It is recommended to restrict permissions to the vaults that you will use `step-kms-plugin` with.
 * Azure has several built-in [RBAC roles for Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/rbac-guide?tabs=azure-cli#azure-built-in-roles-for-key-vault-data-plane-operations).
-* You can restrict permissions to the vaults that you will use `step-kms-plugin` with.
 
 ### Google Cloud KMS
 
 To authenticate, be sure you have installed [the `gcloud` CLI](https://cloud.google.com/sdk/docs/install) and have [configured Google Cloud application default credentials](https://developers.google.com/accounts/docs/application-default-credentials) in your local environment, eg. by running `gcloud auth application-default login`.
 
+The following Cloud KMS permissions may be required for `step-kms-plugin`:
+
 ```
+cloudkms.cryptoKey.create
 cloudkms.cryptoKeyVersions.create
 cloudkms.cryptoKeyVersions.get
 cloudkms.cryptoKeyVersions.useToDecrypt
