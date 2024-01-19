@@ -74,8 +74,8 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   # Create a key on Azure's Key Vault using az credentials:
   step-kms-plugin create 'azurekms:vault=my-key-vault;name=my-key'
 
-  # Create a key on AWS KMS with the name tag my-key, but return the value in JSON so we can get the key-id to access it:
-  step-kms-plugin create --json --kms awskms:region=us-west-2 my-key
+  # Create a key on AWS KMS with the name tag my-key. Return the value in JSON to get the uri used to access the key:
+  step-kms-plugin create --json awskms:name=my-key
 
   # Create a 2048-bit RSA key on a YubiKey:
   step-kms-plugin create --kty RSA --size 2048 yubikey:slot-id=82
@@ -84,7 +84,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   step-kms-plugin create --touch-policy always --pin-policy once yubikey:slot-id=82
   
   # Create an Attestation Key (AK) in the default TPM KMS:
-  step-kms-plugin create 'tpmkms:name=my-ak;ak=true' --kty RSA --size 2048
+  step-kms-plugin create --kty RSA --size 2048 'tpmkms:name=my-ak;ak=true'
 
   # Create an EC P-256 private key in the default TPM KMS and print it using the TSS2 PEM format:
   step-kms-plugin create --format TSS2 tpmkms:name=my-ec-key
@@ -93,7 +93,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
   step-kms-plugin create my-tmp-ec-key --kms tpmkms:storage-directory=/tmp/tpmobjects
 
   # Create an RSA 4096 bits private key in the default TPM KMS:
-  step-kms-plugin create tpmkms:name=my-rsa-key --kty RSA --size 4096
+  step-kms-plugin create --kty RSA --size 4096 tpmkms:name=my-rsa-key
 
   # Create an EC P-256 private key, attested by an AK, in the default TPM KMS:
   step-kms-plugin create 'tpmkms:name=my-ec-key;attest-by=my-ak'`,
@@ -115,12 +115,21 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 		pinPolicy := pinPolicyMapping[flagutil.MustString(flags, "pin-policy")]
 		touchPolicy := touchPolicyMapping[flagutil.MustString(flags, "touch-policy")]
 
-		if kty != "RSA" {
-			size = 0
-		}
 		// Do not set crv unless the flag is explicitly set by the user
 		if kty != "EC" && !flags.Changed("crv") {
 			crv = ""
+		}
+		// Set kty RSA if the pss flag is passed
+		if pss {
+			if !flags.Changed("kty") {
+				kty = "RSA"
+			} else if kty != "RSA" {
+				return fmt.Errorf("flag --pss is incompatible with --kty %s", kty)
+			}
+		}
+		// Set the size to 0 for non-RSA keys
+		if kty != "RSA" {
+			size = 0
 		}
 
 		signatureAlgorithm := getSignatureAlgorithm(kty, crv, alg, pss)
