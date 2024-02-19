@@ -3,7 +3,7 @@ module github.com/smallstep/step-kms-plugin
 go 1.20
 
 require (
-	github.com/fxamacker/cbor/v2 v2.5.0
+	github.com/fxamacker/cbor/v2 v2.6.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	go.step.sm/cli-utils v0.8.0
