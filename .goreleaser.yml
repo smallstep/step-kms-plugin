@@ -147,6 +147,16 @@ nfpms:
         dependencies:
           - pcsc-lite-libs
 
+sboms:
+  - id: archive
+    artifacts: archive
+    args: ["$artifact", "--output", "cyclonedx-json=$document"]
+    env:
+      - SYFT_GOLANG_SEARCH_LOCAL_MOD_CACHE_LICENSES=true
+  - id: binary
+    artifacts: binary
+    args: ["$artifact", "--output", "cyclonedx-json=$document"]
+
 checksum:
   name_template: "checksums.txt"
 
