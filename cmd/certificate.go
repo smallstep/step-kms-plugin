@@ -16,10 +16,13 @@ package cmd
 import (
 	"fmt"
 	"io/fs"
+	"net/url"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
+	"go.step.sm/crypto/kms/uri"
 	"go.step.sm/crypto/pemutil"
 
 	"github.com/smallstep/step-kms-plugin/internal/flagutil"
@@ -125,6 +128,16 @@ var certificateCmd = &cobra.Command{
 		}
 		defer km.Close()
 
+		// On mackms there's no need to specify a label (name), the keychain
+		// will automatically use the common name by default. But we always need
+		// a label to load the certificate.
+		loadCertificateName := name
+		if strings.EqualFold(loadCertificateName, "mackms:") {
+			loadCertificateName = uri.New("mackms", url.Values{
+				"label": []string{cert.Subject.CommonName},
+			}).String()
+		}
+
 		switch cm := km.(type) {
 		case apiv1.CertificateChainManager:
 			if err := cm.StoreCertificateChain(&apiv1.StoreCertificateChainRequest{
@@ -134,7 +147,7 @@ var certificateCmd = &cobra.Command{
 				return err
 			}
 			certs, err = cm.LoadCertificateChain(&apiv1.LoadCertificateChainRequest{
-				Name: name,
+				Name: loadCertificateName,
 			})
 			if err != nil {
 				return err
@@ -148,7 +161,7 @@ var certificateCmd = &cobra.Command{
 				return err
 			}
 			cert, err = cm.LoadCertificate(&apiv1.LoadCertificateRequest{
-				Name: name,
+				Name: loadCertificateName,
 			})
 			if err != nil {
 				return err
@@ -160,13 +173,14 @@ var certificateCmd = &cobra.Command{
 		switch {
 		case bundle:
 			for _, c := range certs {
-				outputCert(c)
+				if err := outputCert(c); err != nil {
+					return err
+				}
 			}
+			return nil
 		default:
-			outputCert(cert)
+			return outputCert(cert)
 		}
-
-		return nil
 	},
 }
 
