@@ -7,7 +7,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	go.step.sm/cli-utils v0.9.0
-	go.step.sm/crypto v0.44.0
+	go.step.sm/crypto v0.44.1
 	golang.org/x/crypto v0.21.0
 	golang.org/x/term v0.18.0
 )
