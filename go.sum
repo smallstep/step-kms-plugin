@@ -237,8 +237,8 @@ go.opentelemetry.io/otel/trace v1.24.0 h1:CsKnnL4dUAr/0llH9FKuc698G04IrpWV0MQA/Y
 go.opentelemetry.io/otel/trace v1.24.0/go.mod h1:HPc3Xr/cOApsBI154IU0OI0HJexz+aw5uPdbs3UCjNU=
 go.step.sm/cli-utils v0.9.0 h1:55jYcsQbnArNqepZyAwcato6Zy2MoZDRkWW+jF+aPfQ=
 go.step.sm/cli-utils v0.9.0/go.mod h1:Y/CRoWl1FVR9j+7PnAewufAwKmBOTzR6l9+7EYGAnp8=
-go.step.sm/crypto v0.44.0 h1:7jAuO8Vfbu2j24/2AZuvOKo31ZJ7M337wKxBC5duQZQ=
-go.step.sm/crypto v0.44.0/go.mod h1:hKl+QUIS4oJFRwQBRcVPz8NOYhRaoOJmwXHd2Y3XTA0=
+go.step.sm/crypto v0.44.1 h1:8ouq8JEYXVxSymuVuX54Ilh5X2dqyjgOGGXyPeXDzV8=
+go.step.sm/crypto v0.44.1/go.mod h1:hKl+QUIS4oJFRwQBRcVPz8NOYhRaoOJmwXHd2Y3XTA0=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
