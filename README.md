@@ -37,7 +37,7 @@ them provide the full functionality:
 
 ## Setting up `step-ca`?
 
-If you're setting up a `step-ca` PKI on one of the supported KMSs, check out our [detailed tutorials in our Cryptographic Protection docs](https://smallstep.com/docs/step-ca/configuration/#cryptographic-protection).
+If you're setting up a `step-ca` PKI on one of the supported KMSs, check out our [detailed tutorials in our Cryptographic Protection docs](https://smallstep.com/docs/step-ca/cryptographic-protection/).
 
 ## Authenticating to a Cloud KMS provider
 
