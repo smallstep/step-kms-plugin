@@ -82,7 +82,7 @@ Keys in a PKCS #11 module requires an id in hexadecimal as well as a label
 
   # Create an EC P-256 private key on a YubiKey with the touch policy "always" and pin policy "once":
   step-kms-plugin create --touch-policy always --pin-policy once yubikey:slot-id=82
-  
+
   # Create an Attestation Key (AK) in the default TPM KMS:
   step-kms-plugin create --kty RSA --size 2048 'tpmkms:name=my-ak;ak=true'
 
