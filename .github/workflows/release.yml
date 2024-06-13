@@ -18,7 +18,7 @@ jobs:
     env:
       DOCKER_IMAGE: smallstep/step-kms-plugin
       CLOUD_TAG: cloud
-      DEBIAN_TAG: bookworm 
+      DEBIAN_TAG: bookworm
       WOLFI_TAG: wolfi
     outputs:
       version: ${{ steps.extract-tag.outputs.VERSION }}
@@ -56,12 +56,12 @@ jobs:
           echo "DOCKER_TAGS_WOLFI=${{ env.DOCKER_IMAGE }}:${WOLFI_TAG}" >> "${GITHUB_ENV}"
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@69320dbe05506a9a39fc8ae11030b214ec2d1f87 # v2.0.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          name: Release ${{ github.ref }}
           draft: false
           prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
 
@@ -71,7 +71,7 @@ jobs:
     needs: create_release
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
       - name: setup release environment
