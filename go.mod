@@ -1,7 +1,6 @@
 module github.com/smallstep/step-kms-plugin
 
-go 1.21
-toolchain go1.22.5
+go 1.22
 
 require (
 	github.com/fxamacker/cbor/v2 v2.7.0
