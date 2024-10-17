@@ -4,9 +4,9 @@ go 1.22
 
 require (
 	github.com/fxamacker/cbor/v2 v2.7.0
+	github.com/smallstep/cli-utils v0.10.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
-	go.step.sm/cli-utils v0.9.0
 	go.step.sm/crypto v0.54.0
 	golang.org/x/crypto v0.28.0
 	golang.org/x/term v0.25.0
@@ -80,7 +80,7 @@ require (
 	github.com/smallstep/go-attestation v0.4.4-0.20240109183208-413678f90935 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/thales-e-security/pool v0.0.2 // indirect
-	github.com/urfave/cli v1.22.14 // indirect
+	github.com/urfave/cli v1.22.15 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect

@@ -24,8 +24,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/smallstep/cli-utils/step"
 	"github.com/spf13/cobra"
-	"go.step.sm/cli-utils/step"
 	"go.step.sm/crypto/kms"
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/kms/uri"
