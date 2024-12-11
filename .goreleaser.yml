@@ -4,6 +4,17 @@
 #  - https://github.com/goreleaser/goreleaser-cross
 #  - https://github.com/goreleaser/goreleaser-cross-example
 project_name: step-kms-plugin
+version: 2
+
+variables:
+  packageName: step-kms-plugin
+  packageRelease: 1 # Manually update release: in the nfpm section to match this value if you change this
+
+after:
+  hooks:
+    # This script depends on IS_PRERELEASE env being set. This is set by CI in the Is Pre-release step.
+    - cmd: bash scripts/package-repo-import.sh {{ .Var.packageName }} {{ .Version }}
+      output: true
 
 builds:
   - id: linux-amd64
@@ -113,11 +124,17 @@ archives:
       - completions/*
 
 nfpms:
-  - builds:
+  - id: packages
+    builds:
       - linux-amd64
       - linux-arm64
-    package_name: step-kms-plugin
-    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    package_name: "{{ .Var.packageName }}"
+    release: "1"
+    file_name_template: >-
+      {{- trimsuffix .ConventionalFileName .ConventionalExtension -}}
+      {{- if and (eq .Arm "6") (eq .ConventionalExtension ".deb") }}6{{ end -}}
+      {{- if not (eq .Amd64 "v1")}}{{ .Amd64 }}{{ end -}}
+      {{- .ConventionalExtension -}}
     vendor: Smallstep Labs
     homepage: https://github.com/smallstep/step-kms-plugin
     maintainer: Smallstep <techadmin@smallstep.com>
@@ -139,6 +156,13 @@ nfpms:
       - src: completions/zsh_completion
         dst: /usr/share/zsh/site-functions/_step-kms-plugin
         packager: rpm
+    rpm:
+      signature:
+          key_file: "{{ .Env.GPG_PRIVATE_KEY_FILE }}"
+    deb:
+      signature:
+          key_file: "{{ .Env.GPG_PRIVATE_KEY_FILE }}"
+          type: origin
     overrides:
       deb:
         dependencies:
@@ -159,6 +183,12 @@ sboms:
 
 checksum:
   name_template: "checksums.txt"
+
+publishers:
+- name: Google Cloud Artifact Registry
+  ids:
+  - packages
+  cmd: ./scripts/package-upload.sh {{ abs .ArtifactPath }} {{ .Var.packageName }} {{ .Version }} {{ .Var.packageRelease }}
 
 snapshot:
   version_template: "{{ .Tag }}"
