@@ -1,6 +1,6 @@
 PKG?=github.com/smallstep/step-kms-plugin
 BINNAME?=step-kms-plugin
-GOLANG_CROSS_VERSION?=v1.22
+GOLANG_CROSS_VERSION?=v1.24
 
 # Set V to 1 for verbose output from the Makefile
 Q=$(if $V,,@)
@@ -115,19 +115,23 @@ govulncheck:
 
 release-dev:
 	$Q @docker run -it --rm --privileged -e CGO_ENABLED=1 \
+		-e GORELEASER_KEY=${GORELEASER_KEY} \
+		-e IS_PRERELEASE=true \
 		--entrypoint /bin/bash \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
-		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION}
+		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION}
 
 release-dry-run:
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 \
+		-e GORELEASER_KEY=${GORELEASER_KEY} \
+		-e IS_PRERELEASE=true \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
-		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
+		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION} \
 		--clean --skip=validate --skip=publish
 
 release:
@@ -136,12 +140,13 @@ release:
 		exit 1;\
 	fi
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
+		-e GORELEASER_KEY=${GORELEASER_KEY} \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
-		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		release --clean
+		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION} \
+		release --clean --split
 
 .PHONY: release-dev release-dry-run release
 
