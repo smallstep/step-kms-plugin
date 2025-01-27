@@ -27,6 +27,8 @@ import (
 	"io"
 	"math/big"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"go.step.sm/crypto/kms"
@@ -97,6 +99,22 @@ digest of the data file for you.`,
 		in := flagutil.MustString(flags, "in")
 		verify := flagutil.MustBool(flags, "verify")
 
+		var saltLength int
+		switch s := strings.ToLower(flagutil.MustString(flags, "salt-length")); s {
+		case "", "auto":
+			saltLength = rsa.PSSSaltLengthAuto
+		case "equal-hash", "hash":
+			saltLength = rsa.PSSSaltLengthEqualsHash
+		default:
+			var err error
+			if saltLength, err = strconv.Atoi(s); err != nil {
+				return fmt.Errorf("failed to parse --salt-length=%q: %w", s, err)
+			}
+			if saltLength < rsa.PSSSaltLengthEqualsHash {
+				return fmt.Errorf("flag --salt-length=%q is not valid: salt length cannot be negative", s)
+			}
+		}
+
 		kuri := ensureSchemePrefix(flagutil.MustString(flags, "kms"))
 		if kuri == "" {
 			kuri = name
@@ -116,7 +134,7 @@ digest of the data file for you.`,
 		}
 
 		pub := signer.Public()
-		so, err := getSignerOptions(km, pub, alg, pss)
+		so, err := getSignerOptions(km, pub, alg, pss, saltLength)
 		if err != nil {
 			return err
 		}
@@ -231,7 +249,7 @@ func jwsSignature(sig []byte, pub crypto.PublicKey) ([]byte, error) {
 	return append(rBytesPadded, sBytesPadded...), nil
 }
 
-func getSignerOptions(km kms.KeyManager, pub crypto.PublicKey, alg string, pss bool) (crypto.SignerOpts, error) {
+func getSignerOptions(km kms.KeyManager, pub crypto.PublicKey, alg string, pss bool, saltLength int) (crypto.SignerOpts, error) {
 	switch k := pub.(type) {
 	case *ecdsa.PublicKey:
 		switch k.Curve {
@@ -259,7 +277,7 @@ func getSignerOptions(km kms.KeyManager, pub crypto.PublicKey, alg string, pss b
 		if pss {
 			pssOptions := &rsa.PSSOptions{
 				Hash:       h,
-				SaltLength: rsa.PSSSaltLengthAuto,
+				SaltLength: saltLength,
 			}
 			// rsa.PSSSaltLengthAuto is not supported by crypto11. The salt
 			// length here is the same used by Go when PSSSaltLengthAuto is
@@ -267,7 +285,7 @@ func getSignerOptions(km kms.KeyManager, pub crypto.PublicKey, alg string, pss b
 			//
 			// This can be fixed if
 			// https://github.com/ThalesIgnite/crypto11/pull/96 gets merged.
-			if _, ok := km.(*pkcs11.PKCS11); ok {
+			if _, ok := km.(*pkcs11.PKCS11); ok && saltLength == rsa.PSSSaltLengthAuto {
 				pssOptions.SaltLength = (k.N.BitLen()-1+7)/8 - 2 - h.Size()
 			}
 			return pssOptions, nil
@@ -280,7 +298,7 @@ func getSignerOptions(km kms.KeyManager, pub crypto.PublicKey, alg string, pss b
 		if err != nil {
 			return nil, err
 		}
-		return getSignerOptions(km, pk, alg, pss)
+		return getSignerOptions(km, pk, alg, pss, saltLength)
 	default:
 		return nil, fmt.Errorf("unsupported public key type %T", pub)
 	}
@@ -341,6 +359,7 @@ func init() {
 
 	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
 	flags.Bool("pss", false, "Use RSA-PSS signature scheme instead of RSA PKCS #1")
+	flags.String("salt-length", "auto", "The salt length used in the RSA-PSS signature scheme.\nOptions are auto (0), equal-hash (-1) or a positive integer")
 	flags.Var(format, "format", "The `format` to print the signature.\nOptions are base64, hex, jws, or raw")
 	flags.String("in", "", "The `file` to sign. Required for Ed25519 keys.")
 	flags.Bool("verify", false, "Verify the signature with the public key")
