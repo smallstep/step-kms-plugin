@@ -1,6 +1,6 @@
 module github.com/smallstep/step-kms-plugin
 
-go 1.23
+go 1.23.6
 
 require (
 	github.com/fxamacker/cbor/v2 v2.7.0
@@ -8,7 +8,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	go.step.sm/crypto v0.58.0
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.34.0
 	golang.org/x/term v0.29.0
 )
 
