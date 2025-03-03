@@ -4,7 +4,7 @@ go 1.23.6
 
 require (
 	github.com/fxamacker/cbor/v2 v2.7.0
-	github.com/smallstep/cli-utils v0.10.0
+	github.com/smallstep/cli-utils v0.12.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	go.step.sm/crypto v0.58.0
@@ -79,7 +79,7 @@ require (
 	github.com/smallstep/go-attestation v0.4.4-0.20240109183208-413678f90935 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/thales-e-security/pool v0.0.2 // indirect
-	github.com/urfave/cli v1.22.15 // indirect
+	github.com/urfave/cli v1.22.16 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.58.0 // indirect
