@@ -98,7 +98,7 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [ 'zip' ]
     builds:
       - linux-amd64
       - linux-arm64
@@ -161,7 +161,7 @@ checksum:
   name_template: "checksums.txt"
 
 snapshot:
-  name_template: "{{ .Tag }}"
+  version_template: "{{ .Tag }}"
 
 changelog:
   sort: asc
