@@ -126,13 +126,14 @@ release-dev:
 release-dry-run:
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 \
 		-e GORELEASER_KEY=${GORELEASER_KEY} \
+		-e GPG_PRIVATE_KEY_FILE=/dev/null \
 		-e IS_PRERELEASE=true \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
 		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION} \
-		--clean --skip=validate --skip=publish --split
+		--clean --skip=validate --skip=sign --skip=publish --split
 
 release:
 	@if [ ! -f ".release-env" ]; then \
