@@ -145,7 +145,7 @@ release:
 	fi
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
 		-e GORELEASER_KEY=${GORELEASER_KEY} \
-		-e ${GPG_PRIVATE_KEY_FILE}=${GPG_PRIVATE_KEY_FILE} \
+		-e GPG_PRIVATE_KEY_FILE=${GPG_PRIVATE_KEY_FILE} \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v ${GPG_PRIVATE_KEY_FILE}:${GPG_PRIVATE_KEY_FILE}:Z \
 		-v $(DOCKER_SOCK):/var/run/docker.sock:Z \
