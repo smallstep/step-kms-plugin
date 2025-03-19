@@ -127,10 +127,10 @@ jobs:
           echo "RELEASE_DATE=${RELEASE_DATE}" >> "${GITHUB_ENV}"
 
       - name: Run GoReleaser Pro
-        uses: goreleaser/goreleaser-action@9ed2f89a662bf1735a48bc8557fd212fa902bebf # v6.1.0
+        uses: goreleaser/goreleaser-action@v6.2.1
         with:
           distribution: goreleaser-pro
-          version: latest
+          version: v2.8.1
           args: publish
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
