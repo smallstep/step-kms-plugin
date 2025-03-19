@@ -10,6 +10,9 @@ GOOS_OVERRIDE ?=
 OUTPUT_ROOT=output/
 RELEASE=./.releases
 
+DOCKER_HOST ?= /var/run/docker.sock
+DOCKER_SOCK := $(if $(filter unix://%,$(DOCKER_HOST)),$(patsubst unix://%,%,$(DOCKER_HOST)),$(DOCKER_HOST))
+
 #########################################
 # Default
 #########################################
@@ -115,20 +118,25 @@ govulncheck:
 
 release-dev:
 	$Q @docker run -it --rm --privileged -e CGO_ENABLED=1 \
+		-e GORELEASER_KEY=$(GORELEASER_KEY) \
+		-e IS_PRERELEASE=true \
 		--entrypoint /bin/bash \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/go/src/$(PKG) \
+		-v $(DOCKER_SOCK):/var/run/docker.sock:Z \
+		-v `pwd`:/go/src/$(PKG):Z \
 		-w /go/src/$(PKG) \
-		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION}
+		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION}
 
 release-dry-run:
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 \
+		-e GORELEASER_KEY=$(GORELEASER_KEY) \
+		-e GPG_PRIVATE_KEY_FILE=/dev/null \
+		-e IS_PRERELEASE=true \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/go/src/$(PKG) \
+		-v $(DOCKER_SOCK):/var/run/docker.sock:Z \
+		-v `pwd`:/go/src/$(PKG):Z \
 		-w /go/src/$(PKG) \
-		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		--clean --skip=validate --skip=publish
+		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION} \
+		release --clean --skip=validate --skip=sign --prepare
 
 release:
 	@if [ ! -f ".release-env" ]; then \
@@ -136,12 +144,23 @@ release:
 		exit 1;\
 	fi
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
+		-e AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
+		-e AWS_S3_BUCKET=$(AWS_S3_BUCKET) \
+		-e AWS_S3_REGION=$(AWS_S3_REGION) \
+		-e AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
+		-e GORELEASER_KEY=$(GORELEASER_KEY) \
+		-e GPG_PRIVATE_KEY_FILE=$(GPG_PRIVATE_KEY_FILE) \
+		-e IS_PRERELEASE=$(IS_PRERELEASE) \
+		-e NFPM_PASSPHRASE=$(NFPM_PASSPHRASE) \
+		-e RELEASE_DATE=$(RELEASE_DATE) \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
-		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v ./$(GPG_PRIVATE_KEY_FILE):/$(GPG_PRIVATE_KEY_FILE) \
+		-v $(DOCKER_SOCK):/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
-		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		release --clean
+		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION} \
+		release --clean --prepare
 
 .PHONY: release-dev release-dry-run release
 

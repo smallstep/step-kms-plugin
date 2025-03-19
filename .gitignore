@@ -25,3 +25,7 @@ dist/
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Packages files
+0x889B19391F774443-Certify.key
+gha-creds-*.json
