@@ -147,9 +147,9 @@ release:
 		-e GORELEASER_KEY=$(GORELEASER_KEY) \
 		-e GPG_PRIVATE_KEY_FILE=$(GPG_PRIVATE_KEY_FILE) \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
-		-v $(GPG_PRIVATE_KEY_FILE):$(GPG_PRIVATE_KEY_FILE) \
-		-v $(DOCKER_SOCK):/var/run/docker.sock:Z \
-		-v `pwd`:/go/src/$(PKG):Z \
+		-v ./$(GPG_PRIVATE_KEY_FILE):/$(GPG_PRIVATE_KEY_FILE) \
+		-v $(DOCKER_SOCK):/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PKG) \
 		-w /go/src/$(PKG) \
 		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION} \
 		release --clean --prepare
