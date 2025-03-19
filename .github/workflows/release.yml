@@ -127,7 +127,6 @@ jobs:
           echo "RELEASE_DATE=${RELEASE_DATE}" >> "${GITHUB_ENV}"
 
       - name: Run GoReleaser Pro
-        if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
         uses: goreleaser/goreleaser-action@v6.2.1
         with:
           distribution: goreleaser-pro

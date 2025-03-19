@@ -13,6 +13,11 @@ echo "Version: ${VERSION}"
 echo "Release: ${RELEASE}"
 echo "Location: ${GCLOUD_LOCATION}"
 
+if [[ ${IS_PRERELEASE} == "true" ]]; then
+  echo "Skipping artifact import; IS_PRERELEASE is 'true'"
+  exit 0;
+fi
+
 if [ "${FILE: -4}" == ".deb" ]; then
   if [[ "${FILE}" =~ "armhf6" ]]; then
     echo "Skipping ${FILE} due to GCP Artifact Registry armhf conflict!"
