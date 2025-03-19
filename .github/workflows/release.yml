@@ -88,7 +88,7 @@ jobs:
           # shellcheck disable=SC2129
           echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' > .release-env
           echo 'GORELEASER_KEY=${{ secrets.GORELEASER_KEY }}' >>  .release-env
-          echo GPG_PRIVATE_KEY_FILE=${GPG_PRIVATE_KEY_FILE} >>  .release-env
+          echo "GPG_PRIVATE_KEY_FILE=${GPG_PRIVATE_KEY_FILE}" >>  .release-env
 
       - name: Write GPG private key to file
         if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
