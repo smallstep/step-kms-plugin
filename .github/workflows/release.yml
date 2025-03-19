@@ -145,7 +145,7 @@ jobs:
 
       - name: Shred and remove GPG private key
         run: |
-          shred -vzun 3 "${GPG_PRIVATE_KEY_FILE}"
+          shred -zun 3 "${GPG_PRIVATE_KEY_FILE}"
         shell: bash
 
   build_upload_docker:
