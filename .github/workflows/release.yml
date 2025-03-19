@@ -77,6 +77,8 @@ jobs:
       id-token: write
       contents: write
       packages: write
+    env:
+      GPG_PRIVATE_KEY_FILE: "0x889B19391F774443-Certify.key"
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -88,10 +90,8 @@ jobs:
           # shellcheck disable=SC2129
           echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' > .release-env
           echo 'GORELEASER_KEY=${{ secrets.GORELEASER_KEY }}' >>  .release-env
-          echo "GPG_PRIVATE_KEY_FILE=${GPG_PRIVATE_KEY_FILE}" >>  .release-env
 
       - name: Write GPG private key to file
-        if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
         run: |
           echo "${GPG_PRIVATE_KEY}" > "${GPG_PRIVATE_KEY_FILE}"
         shell: bash
@@ -100,6 +100,10 @@ jobs:
 
       - name: Build binaries
         run: make release
+        env:
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          NFPM_PASSPHRASE: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+          GPG_PRIVATE_KEY_FILE: ${{ env.GPG_PRIVATE_KEY_FILE }}
 
       - name: Authenticate to Google Cloud
         if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
