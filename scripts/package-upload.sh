@@ -7,11 +7,10 @@ FILE="${1}"
 PACKAGE="${2}"
 VERSION="${3}"
 
+
 echo "Package File: ${FILE}"
 echo "Package: ${PACKAGE}"
 echo "Version: ${VERSION}"
-echo "Release: ${RELEASE}"
-echo "Location: ${GCLOUD_LOCATION}"
 echo "Prerelease: ${IS_PRERELEASE}"
 
 if [[ ${IS_PRERELEASE} == "true" ]]; then

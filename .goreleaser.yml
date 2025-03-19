@@ -15,6 +15,8 @@ after:
     # This script depends on IS_PRERELEASE env being set. This is set by CI in the Is Pre-release step.
     - cmd: bash scripts/package-repo-import.sh {{ .Var.packageName }} {{ .Version }}
       output: true
+      env:
+      - IS_PRERELEASE={{ .Env.IS_PRERELEASE }}
 
 builds:
   - id: linux-amd64
@@ -189,6 +191,8 @@ publishers:
   ids:
   - packages
   cmd: ./scripts/package-upload.sh {{ abs .ArtifactPath }} {{ .Var.packageName }} {{ .Version }} {{ .Var.packageRelease }}
+  env:
+  - IS_PRERELEASE={{ .Env.IS_PRERELEASE }}
 
 snapshot:
   version_template: "{{ .Tag }}"
