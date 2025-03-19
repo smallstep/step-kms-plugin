@@ -144,9 +144,16 @@ release:
 		exit 1;\
 	fi
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
+		-e AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
+		-e AWS_S3_BUCKET=$(AWS_S3_BUCKET) \
+		-e AWS_S3_REGION=$(AWS_S3_REGION) \
+		-e AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
 		-e GORELEASER_KEY=$(GORELEASER_KEY) \
 		-e GPG_PRIVATE_KEY_FILE=$(GPG_PRIVATE_KEY_FILE) \
+		-e IS_PRERELEASE=$(IS_PRERELEASE) \
 		-e NFPM_PASSPHRASE=$(NFPM_PASSPHRASE) \
+		-e RELEASE_DATE=$(RELEASE_DATE) \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
 		-v ./$(GPG_PRIVATE_KEY_FILE):/$(GPG_PRIVATE_KEY_FILE) \
 		-v $(DOCKER_SOCK):/var/run/docker.sock \
