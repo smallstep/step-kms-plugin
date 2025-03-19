@@ -118,7 +118,7 @@ govulncheck:
 
 release-dev:
 	$Q @docker run -it --rm --privileged -e CGO_ENABLED=1 \
-		-e GORELEASER_KEY=${GORELEASER_KEY} \
+		-e GORELEASER_KEY=$(GORELEASER_KEY) \
 		-e IS_PRERELEASE=true \
 		--entrypoint /bin/bash \
 		-v $(DOCKER_SOCK):/var/run/docker.sock:Z \
@@ -128,7 +128,7 @@ release-dev:
 
 release-dry-run:
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 \
-		-e GORELEASER_KEY=${GORELEASER_KEY} \
+		-e GORELEASER_KEY=$(GORELEASER_KEY) \
 		-e GPG_PRIVATE_KEY_FILE=/dev/null \
 		-e IS_PRERELEASE=true \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
@@ -144,10 +144,10 @@ release:
 		exit 1;\
 	fi
 	$Q @docker run --rm --privileged -e CGO_ENABLED=1 --env-file .release-env \
-		-e GORELEASER_KEY=${GORELEASER_KEY} \
-		-e GPG_PRIVATE_KEY_FILE=${GPG_PRIVATE_KEY_FILE} \
+		-e GORELEASER_KEY=$(GORELEASER_KEY) \
+		-e GPG_PRIVATE_KEY_FILE=$(GPG_PRIVATE_KEY_FILE) \
 		--entrypoint /go/src/$(PKG)/docker/build/entrypoint.sh \
-		-v ${GPG_PRIVATE_KEY_FILE}:${GPG_PRIVATE_KEY_FILE} \
+		-v $(GPG_PRIVATE_KEY_FILE):$(GPG_PRIVATE_KEY_FILE) \
 		-v $(DOCKER_SOCK):/var/run/docker.sock:Z \
 		-v `pwd`:/go/src/$(PKG):Z \
 		-w /go/src/$(PKG) \
