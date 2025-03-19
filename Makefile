@@ -136,7 +136,7 @@ release-dry-run:
 		-v `pwd`:/go/src/$(PKG):Z \
 		-w /go/src/$(PKG) \
 		ghcr.io/goreleaser/goreleaser-cross-pro:${GOLANG_CROSS_VERSION} \
-		--clean --skip=validate --skip=sign --prepare
+		release --clean --skip=validate --skip=sign --prepare
 
 release:
 	@if [ ! -f ".release-env" ]; then \
