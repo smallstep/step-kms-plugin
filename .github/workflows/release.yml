@@ -123,8 +123,10 @@ jobs:
       - name: Get Release Date
         id: release_date
         run: |
+          # shellcheck disable=SC2129
           RELEASE_DATE=$(date -u +"%y-%m-%d")
           echo "RELEASE_DATE=${RELEASE_DATE}" >> "${GITHUB_ENV}"
+          echo 'IS_PRERELEASE=${{ needs.create_release.outputs.is_prerelease }}' >> "${GITHUB_ENV}"
 
       - name: Run GoReleaser Pro
         uses: goreleaser/goreleaser-action@v6.2.1

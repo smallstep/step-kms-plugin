@@ -188,7 +188,7 @@ publishers:
 - name: Google Cloud Artifact Registry
   ids:
   - packages
-  cmd: IS_PRERELEASE={{ .Env.IS_PRERELEASE }} ./scripts/package-upload.sh {{ abs .ArtifactPath }} {{ .Var.packageName }} {{ .Version }} {{ .Var.packageRelease }}
+  cmd: ./scripts/package-upload.sh {{ abs .ArtifactPath }} {{ .Var.packageName }} {{ .Version }} {{ .Var.packageRelease }}
 
 snapshot:
   version_template: "{{ .Tag }}"
