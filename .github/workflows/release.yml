@@ -143,6 +143,11 @@ jobs:
           RELEASE_DATE: ${{ env.RELEASE_DATE }}
           IS_PRERELEASE: ${{ needs.create_release.outputs.is_prerelease }}
 
+      - name: Shred and remove GPG private key
+        run: |
+          shred -vzun 3 "${GPG_PRIVATE_KEY_FILE}"
+        shell: bash
+
   build_upload_docker:
     name: Build & Upload Docker Image
     needs: create_release
