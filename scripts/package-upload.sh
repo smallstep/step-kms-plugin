@@ -12,9 +12,10 @@ echo "Package: ${PACKAGE}"
 echo "Version: ${VERSION}"
 echo "Release: ${RELEASE}"
 echo "Location: ${GCLOUD_LOCATION}"
+echo "Prerelease: ${IS_PRERELEASE}"
 
 if [[ ${IS_PRERELEASE} == "true" ]]; then
-  echo "Skipping artifact import; IS_PRERELEASE is 'true'"
+  echo "Skipping artifact upload; IS_PRERELEASE is 'true'"
   exit 0;
 fi
 
