@@ -88,6 +88,15 @@ jobs:
           # shellcheck disable=SC2129
           echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' > .release-env
           echo 'GORELEASER_KEY=${{ secrets.GORELEASER_KEY }}' >>  .release-env
+          echo GPG_PRIVATE_KEY_FILE=${GPG_PRIVATE_KEY_FILE} >>  .release-env
+
+      - name: Write GPG private key to file
+        if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
+        run: |
+          echo "${GPG_PRIVATE_KEY}" > "${GPG_PRIVATE_KEY_FILE}"
+        shell: bash
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Build binaries
         run: make release
@@ -107,14 +116,6 @@ jobs:
         with:
           project_id: ${{ secrets.GOOGLE_CLOUD_PACKAGES_PROJECT_ID }}
 
-      - name: Write GPG private key to file
-        if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
-        run: |
-          echo "${GPG_PRIVATE_KEY}" > "${GPG_PRIVATE_KEY_FILE}"
-        shell: bash
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
       - name: Get Release Date
         id: release_date
         run: |
@@ -126,7 +127,7 @@ jobs:
         with:
           distribution: goreleaser-pro
           version: latest
-          args: continue --merge
+          args: publish
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
