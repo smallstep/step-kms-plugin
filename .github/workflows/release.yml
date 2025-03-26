@@ -94,6 +94,7 @@ jobs:
           echo 'AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}'; \
           echo 'AWS_S3_REGION=${{ secrets.AWS_S3_REGION }}'; \
           echo 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}'; \
+          echo 'GPG_PRIVATE_KEY_FILE=${{ env.GPG_PRIVATE_KEY_FILE }}'; \
           echo 'NFPM_PASSPHRASE=${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}'; } >> .release-env
 
       - name: Write GPG private key to file
@@ -105,10 +106,6 @@ jobs:
 
       - name: Build binaries
         run: make release
-        env:
-          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-          NFPM_PASSPHRASE: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
-          GPG_PRIVATE_KEY_FILE: ${{ env.GPG_PRIVATE_KEY_FILE }}
 
       - name: Authenticate to Google Cloud
         if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
