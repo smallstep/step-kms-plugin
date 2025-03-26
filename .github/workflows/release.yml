@@ -90,6 +90,11 @@ jobs:
           # shellcheck disable=SC2129
           echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' > .release-env
           echo 'GORELEASER_KEY=${{ secrets.GORELEASER_KEY }}' >>  .release-env
+          echo 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' >>  .release-env
+          echo 'AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}' >>  .release-env
+          echo 'AWS_S3_REGION=${{ secrets.AWS_S3_REGION }}' >>  .release-env
+          echo 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' >>  .release-env
+          echo 'NFPM_PASSPHRASE=${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}' >>  .release-env
 
       - name: Write GPG private key to file
         run: |
@@ -148,6 +153,7 @@ jobs:
       - name: Shred and remove GPG private key
         run: |
           shred -zun 3 "${GPG_PRIVATE_KEY_FILE}"
+          shred -zun 3 .release-env
         shell: bash
 
   build_upload_docker:
