@@ -131,7 +131,7 @@ jobs:
           echo 'IS_PRERELEASE=${{ needs.create_release.outputs.is_prerelease }}' >> "${GITHUB_ENV}"
 
       - name: Run GoReleaser Pro
-        uses: goreleaser/goreleaser-action@v6.2.1
+        uses: goreleaser/goreleaser-action@v6.3.0
         with:
           distribution: goreleaser-pro
           version: v2.8.1
