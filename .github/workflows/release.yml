@@ -69,142 +69,155 @@ jobs:
           draft: false
           prerelease: ${{ steps.is_prerelease.outputs.IS_PRERELEASE }}
 
-  goreleaser:
-    name: Upload Assets to Github w/ goreleaser
-    runs-on: ubuntu-latest
-    needs: create_release
+  #goreleaser:
+  #  name: Upload Assets to Github w/ goreleaser
+  #  runs-on: ubuntu-latest
+  #  needs: create_release
+  #  permissions:
+  #    id-token: write
+  #    contents: write
+  #    packages: write
+  #  env:
+  #    GPG_PRIVATE_KEY_FILE: "0x889B19391F774443-Certify.key"
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #      with:
+  #        fetch-depth: 0
+
+  #    - name: setup release environment
+  #      run: |-
+  #        # shellcheck disable=SC2129
+  #        echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' > .release-env
+  #        { echo 'GORELEASER_KEY=${{ secrets.GORELEASER_KEY }}'; \
+  #        echo 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}'; \
+  #        echo 'AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}'; \
+  #        echo 'AWS_S3_REGION=${{ secrets.AWS_S3_REGION }}'; \
+  #        echo 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}'; \
+  #        echo 'GPG_PRIVATE_KEY_FILE=${{ env.GPG_PRIVATE_KEY_FILE }}'; \
+  #        echo 'NFPM_PASSPHRASE=${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}'; } >> .release-env
+
+  #    - name: Write GPG private key to file
+  #      run: |
+  #        echo "${GPG_PRIVATE_KEY}" > "${GPG_PRIVATE_KEY_FILE}"
+  #      shell: bash
+  #      env:
+  #        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+  #    - name: Build binaries
+  #      run: make release
+
+  #    - name: Authenticate to Google Cloud
+  #      if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
+  #      id: gcloud-auth
+  #      uses: google-github-actions/auth@v2
+  #      with:
+  #        token_format: access_token
+  #        workload_identity_provider: ${{ secrets.GOOGLE_CLOUD_WORKLOAD_IDENTITY_PROVIDER }}
+  #        service_account: ${{ secrets.GOOGLE_CLOUD_GITHUB_SERVICE_ACCOUNT }}
+
+  #    - name: Set up Google Cloud SDK
+  #      if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
+  #      uses: google-github-actions/setup-gcloud@v2
+  #      with:
+  #        project_id: ${{ secrets.GOOGLE_CLOUD_PACKAGES_PROJECT_ID }}
+
+  #    - name: Get Release Date
+  #      id: release_date
+  #      run: |
+  #        # shellcheck disable=SC2129
+  #        RELEASE_DATE=$(date -u +"%y-%m-%d")
+  #        echo "RELEASE_DATE=${RELEASE_DATE}" >> "${GITHUB_ENV}"
+  #        echo 'IS_PRERELEASE=${{ needs.create_release.outputs.is_prerelease }}' >> "${GITHUB_ENV}"
+
+  #    - name: Run GoReleaser Pro
+  #      uses: goreleaser/goreleaser-action@v6.3.0
+  #      with:
+  #        distribution: goreleaser-pro
+  #        version: v2.8.1
+  #        args: publish
+  #      env:
+  #        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #        AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+  #        AWS_S3_REGION: ${{ secrets.AWS_S3_REGION }}
+  #        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #        GITHUB_TOKEN: ${{ secrets.GORELEASER_PAT }}
+  #        GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+  #        NFPM_PASSPHRASE: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+  #        RELEASE_DATE: ${{ env.RELEASE_DATE }}
+  #        IS_PRERELEASE: ${{ needs.create_release.outputs.is_prerelease }}
+
+  #    - name: Shred and remove GPG private key
+  #      run: |
+  #        shred -zun 3 "${GPG_PRIVATE_KEY_FILE}"
+  #        shred -zun 3 .release-env
+  #      shell: bash
+
+  #build_upload_docker:
+  #  name: Build & Upload Docker Image
+  #  needs: create_release
+  #  permissions:
+  #    id-token: write
+  #    contents: write
+  #  uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+  #  with:
+  #    platforms: linux/amd64,linux/arm64,linux/386,linux/arm
+  #    tags: ${{ needs.create_release.outputs.docker_tags }}
+  #    docker_image: smallstep/step-kms-plugin
+  #    docker_file: docker/Dockerfile
+  #  secrets: inherit
+
+  #build_upload_docker_debian:
+  #  name: Build & Upload Debian Docker Image
+  #  needs: create_release
+  #  permissions:
+  #    id-token: write
+  #    contents: write
+  #  uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+  #  with:
+  #    platforms: linux/amd64,linux/386,linux/arm,linux/arm64
+  #    tags: ${{ needs.create_release.outputs.docker_tags_debian }}
+  #    docker_image: smallstep/step-kms-plugin
+  #    docker_file: docker/Dockerfile.debian
+  #  secrets: inherit
+
+  #build_upload_docker_cloud:
+  #  name: Build & Upload Cloud-Only Docker Image
+  #  needs: create_release
+  #  permissions:
+  #    id-token: write
+  #    contents: write
+  #  uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+  #  with:
+  #    platforms: linux/amd64,linux/arm64,linux/386,linux/arm
+  #    tags: ${{ needs.create_release.outputs.docker_tags_cloud }}
+  #    docker_image: smallstep/step-kms-plugin
+  #    docker_file: docker/Dockerfile.cloud
+  #  secrets: inherit
+
+  #build_upload_docker_wolfi:
+  #  name: Build & Upload Wolfi Docker Image
+  #  needs: create_release
+  #  permissions:
+  #    id-token: write
+  #    contents: write
+  #  uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+  #  with:
+  #    platforms: linux/amd64
+  #    tags: ${{ needs.create_release.outputs.docker_tags_wolfi }}
+  #    docker_image: smallstep/step-kms-plugin
+  #    docker_file: docker/Dockerfile.wolfi
+  #  secrets: inherit
+
+  codesign_builds:
+    name: Codesign Artifacts
+    #needs: ci
     permissions:
-      id-token: write
+      actions: read
       contents: write
+      id-token: write
       packages: write
-    env:
-      GPG_PRIVATE_KEY_FILE: "0x889B19391F774443-Certify.key"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 0
-
-      - name: setup release environment
-        run: |-
-          # shellcheck disable=SC2129
-          echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' > .release-env
-          { echo 'GORELEASER_KEY=${{ secrets.GORELEASER_KEY }}'; \
-          echo 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}'; \
-          echo 'AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}'; \
-          echo 'AWS_S3_REGION=${{ secrets.AWS_S3_REGION }}'; \
-          echo 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}'; \
-          echo 'GPG_PRIVATE_KEY_FILE=${{ env.GPG_PRIVATE_KEY_FILE }}'; \
-          echo 'NFPM_PASSPHRASE=${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}'; } >> .release-env
-
-      - name: Write GPG private key to file
-        run: |
-          echo "${GPG_PRIVATE_KEY}" > "${GPG_PRIVATE_KEY_FILE}"
-        shell: bash
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
-      - name: Build binaries
-        run: make release
-
-      - name: Authenticate to Google Cloud
-        if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
-        id: gcloud-auth
-        uses: google-github-actions/auth@v2
-        with:
-          token_format: access_token
-          workload_identity_provider: ${{ secrets.GOOGLE_CLOUD_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GOOGLE_CLOUD_GITHUB_SERVICE_ACCOUNT }}
-
-      - name: Set up Google Cloud SDK
-        if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GOOGLE_CLOUD_PACKAGES_PROJECT_ID }}
-
-      - name: Get Release Date
-        id: release_date
-        run: |
-          # shellcheck disable=SC2129
-          RELEASE_DATE=$(date -u +"%y-%m-%d")
-          echo "RELEASE_DATE=${RELEASE_DATE}" >> "${GITHUB_ENV}"
-          echo 'IS_PRERELEASE=${{ needs.create_release.outputs.is_prerelease }}' >> "${GITHUB_ENV}"
-
-      - name: Run GoReleaser Pro
-        uses: goreleaser/goreleaser-action@v6.3.0
-        with:
-          distribution: goreleaser-pro
-          version: v2.8.1
-          args: publish
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          AWS_S3_REGION: ${{ secrets.AWS_S3_REGION }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GORELEASER_PAT }}
-          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-          NFPM_PASSPHRASE: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
-          RELEASE_DATE: ${{ env.RELEASE_DATE }}
-          IS_PRERELEASE: ${{ needs.create_release.outputs.is_prerelease }}
-
-      - name: Shred and remove GPG private key
-        run: |
-          shred -zun 3 "${GPG_PRIVATE_KEY_FILE}"
-          shred -zun 3 .release-env
-        shell: bash
-
-  build_upload_docker:
-    name: Build & Upload Docker Image
-    needs: create_release
-    permissions:
-      id-token: write
-      contents: write
-    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
-    with:
-      platforms: linux/amd64,linux/arm64,linux/386,linux/arm
-      tags: ${{ needs.create_release.outputs.docker_tags }}
-      docker_image: smallstep/step-kms-plugin
-      docker_file: docker/Dockerfile
+      security-events: write
+    uses: smallstep/step-kms-plugin-private/.github/workflows/release.yml@main
     secrets: inherit
 
-  build_upload_docker_debian:
-    name: Build & Upload Debian Docker Image
-    needs: create_release
-    permissions:
-      id-token: write
-      contents: write
-    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
-    with:
-      platforms: linux/amd64,linux/386,linux/arm,linux/arm64
-      tags: ${{ needs.create_release.outputs.docker_tags_debian }}
-      docker_image: smallstep/step-kms-plugin
-      docker_file: docker/Dockerfile.debian
-    secrets: inherit
-
-  build_upload_docker_cloud:
-    name: Build & Upload Cloud-Only Docker Image
-    needs: create_release
-    permissions:
-      id-token: write
-      contents: write
-    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
-    with:
-      platforms: linux/amd64,linux/arm64,linux/386,linux/arm
-      tags: ${{ needs.create_release.outputs.docker_tags_cloud }}
-      docker_image: smallstep/step-kms-plugin
-      docker_file: docker/Dockerfile.cloud
-    secrets: inherit
-
-  build_upload_docker_wolfi:
-    name: Build & Upload Wolfi Docker Image
-    needs: create_release
-    permissions:
-      id-token: write
-      contents: write
-    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
-    with:
-      platforms: linux/amd64
-      tags: ${{ needs.create_release.outputs.docker_tags_wolfi }}
-      docker_image: smallstep/step-kms-plugin
-      docker_file: docker/Dockerfile.wolfi
-    secrets: inherit
