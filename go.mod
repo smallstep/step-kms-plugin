@@ -8,7 +8,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/smallstep/cli-utils v0.12.1
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.6
+	github.com/spf13/pflag v1.0.7
 	go.step.sm/crypto v0.67.0
 	golang.org/x/crypto v0.40.0
 	golang.org/x/term v0.33.0
