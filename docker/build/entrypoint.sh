@@ -2,6 +2,11 @@
 
 set -e
 
+# Fix for missing bullseye repos:
+echo 'deb http://archive.debian.org/debian bullseye main
+deb http://deb.debian.org/debian-security bullseye-security main
+deb http://archive.debian.org/debian bullseye-updates main' > /etc/apt/sources.list
+
 apt update
 apt install --no-install-recommends -y curl pkg-config libpcsclite-dev libpcsclite-dev:arm64
 

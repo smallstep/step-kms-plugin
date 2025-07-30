@@ -112,7 +112,7 @@ archives:
     format_overrides:
       - goos: windows
         formats: [ 'zip' ]
-    builds:
+    ids:
       - linux-amd64
       - linux-arm64
       - darwin-amd64
@@ -127,7 +127,7 @@ archives:
 
 nfpms:
   - id: packages
-    builds:
+    ids:
       - linux-amd64
       - linux-arm64
     package_name: "{{ .Var.packageName }}"
