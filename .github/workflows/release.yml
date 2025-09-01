@@ -118,7 +118,7 @@ jobs:
 
       - name: Set up Google Cloud SDK
         if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ secrets.GOOGLE_CLOUD_PACKAGES_PROJECT_ID }}
 
