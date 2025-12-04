@@ -7,9 +7,7 @@ echo 'deb http://archive.debian.org/debian bullseye main
 deb http://deb.debian.org/debian-security bullseye-security main
 deb http://archive.debian.org/debian bullseye-updates main' > /etc/apt/sources.list
 
-apt-get update
 apt-get install debian-archive-keyring
-apt-get update
 
 apt update
 apt install --no-install-recommends -y curl pkg-config libpcsclite-dev libpcsclite-dev:arm64
