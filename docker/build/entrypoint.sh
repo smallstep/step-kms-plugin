@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 # Fix for missing bullseye repos:
 echo 'deb http://archive.debian.org/debian bullseye main
@@ -9,7 +9,7 @@ deb http://archive.debian.org/debian bullseye-updates main' > /etc/apt/sources.l
 
 apt-get update
 apt-get install debian-archive-keyring
-apt-getupdate
+apt-get update
 
 apt update
 apt install --no-install-recommends -y curl pkg-config libpcsclite-dev libpcsclite-dev:arm64
