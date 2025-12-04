@@ -159,7 +159,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@mariano/qemu
     with:
       platforms: linux/amd64,linux/386,linux/arm,linux/arm64
       tags: ${{ needs.create_release.outputs.docker_tags }}
@@ -187,7 +187,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@main
+    uses: smallstep/workflows/.github/workflows/docker-buildx-push.yml@mariano/qemu
     with:
       platforms: linux/amd64,linux/386,linux/arm,linux/arm64
       tags: ${{ needs.create_release.outputs.docker_tags_cloud }}
