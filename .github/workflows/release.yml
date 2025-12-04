@@ -18,7 +18,7 @@ jobs:
     env:
       DOCKER_IMAGE: smallstep/step-kms-plugin
       CLOUD_TAG: cloud
-      DEBIAN_TAG: bookworm
+      DEBIAN_TAG: trixie
       WOLFI_TAG: wolfi
     outputs:
       version: ${{ steps.extract-tag.outputs.VERSION }}

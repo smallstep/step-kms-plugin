@@ -1,4 +1,4 @@
-FROM golang:bookworm AS builder
+FROM golang:trixie AS builder
 
 WORKDIR /src
 COPY . .
@@ -7,7 +7,7 @@ RUN apt-get update
 RUN apt-get install -y --no-install-recommends gcc pkgconf libpcsclite-dev
 RUN make V=1 build
 
-FROM smallstep/step-cli:bookworm
+FROM smallstep/step-cli:trixie
 
 COPY --from=builder /src/bin/step-kms-plugin /usr/local/bin/step-kms-plugin
 
