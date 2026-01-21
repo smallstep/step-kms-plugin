@@ -285,7 +285,9 @@ $ step kms sign --alg SHA256 --pss  --in data.txt 'pkcs11:token=smallstep;object
 iT/enoe6zXfz4bZolrQUoYf+B5bDhn++cfkgM4x4ozqX8xd6lljPMODGB3Z43rfvUHc3A//ULzN8DjAzA7nuExneexrlAalwhqeMHSLHAmJsztgpuQ2OHdpsEfWIbkQgd4lfZWBq0Srri32SEqTnqp+s2Itf1R1By6PFcsftVMFvH3foXn3bEwWK8gHsxLRt/bnqC7ubXU+b/xjUQiu/LMl+p7RSFVjDtm3e0j07G6cbsABsr4EA0Xlw7JRrYbiP3hz4GwfRbfSBKBXrCF+edpBhGtscJnrdwL9LD/MbaDgEWrf8lO1UFmLp2B6NsjvNiQhZJ4ruQ4isHOF669z5cFcB5Hc14i4ZI81dYAI8AjG7NZvF07bH32gM2h6vVEgesrTqqcKpLW/dge3cpcEimA0Nfzpeg6ZnhnugCtI8FBDZAbo3KP9e4O2mXydP5MmZu4vWajjWc4h3sReBFXg888j2dh8gsJXCIGNUXUzULHysfdTVivnewtW2sDDnEK+L
 ```
 
-### Signing certificates with step
+### Examples
+
+#### Example: Signing a Root CA with step
 
 The `step-kms-plugin` is automatically used by `step certificate create` and
 `step certificate sign` commands if we use the `--kms` flag. With these
@@ -364,3 +366,41 @@ mX6QduO/H/k8GZzcx923U54bRPCxKUaPvg==
 -----END CERTIFICATE-----
 ```
 
+#### Example: Client Certificate on a YubiKey
+
+In this example, we want to issue a client certificate using a private key stored on a YubiKey.
+We're using an OIDC CA provisioner in this example. There's no device attestation in this example,
+but the private key is not exportable from the YubiKey.
+
+First, create a private key on the YubiKey in slot 9a, and output a CSR:
+
+```
+$ step certificate create --csr --kms 'yubikey:pin-value=123456' --key 'yubikey:slot-id=9a' mariano@smallstep.com mariano.csr
+Your certificate signing request has been saved in mariano.csr.
+```
+
+Next, get the CSR signed, using the OIDC provisioner:
+
+```
+$ step ca sign mariano.csr mariano.crt
+✔ Provisioner: Google (OIDC) [client: 1087160488420-8qt7bavg3qesdhs6it824mhnfgcfe8il.apps.googleusercontent.com]
+Your default web browser has been opened to visit:
+
+https://accounts.google.com/o/oauth2/v2/auth?...
+
+✔ CA: https://ca.smallstep.com:8443
+✔ Certificate: mariano.crt
+```
+
+Finally, import the new certificate into the YubiKey:
+
+```
+$ step kms certificate --import mariano.crt --kms 'yubikey:' 'yubikey:slot-id=9a'
+-----BEGIN CERTIFICATE-----
+MIICQjCCAeigAwIBAgIRANfNWEXAMPLE3zJ+jRZ4TbUwCgYIKoZIzj0EAwIwKTEn
+...
+-----END CERTIFICATE-----
+
+```
+
+Note: To use this client certificate against a server, the server needs to trust the intermediate CA rather than the root CA. That's because YubiKeys only support one certificate per key slot (in this case, the client certificate). On your server, you can either trust the intermediate by itself, or a PEM bundle consisting of the intermediate CA first, then the root CA.
