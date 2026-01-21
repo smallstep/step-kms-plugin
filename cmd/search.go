@@ -35,9 +35,9 @@ QUERY PARAMETERS:
 
   TPM (tpmkms:)
     - ak=true     Search only attestation keys (AKs)
-    - ak=false    Search only managed keys (non-AKs)
+    - ak=false    Search only application keys (non-AKs)
     - name=<name> Search for a key with the specified name
-    - (no param)  Search all keys (both AKs and managed keys)
+    - (no param)  Search all keys (both AKs and application keys)
 
   macOS Keychain and Secure Enclave (mackms:)
     - label=<name>  Search keys with the specified label/name
@@ -51,13 +51,16 @@ QUERY PARAMETERS:
   # Search all keys with a custom tag:
   step-kms-plugin search mackms:tag=com.example.crypto
 
-  # Search all keys (managed keys and AKs) on a TPM:
+  # Search all keys (application and attestation keys) on a TPM:
   step-kms-plugin search tpmkms:
+
+  # Search all keys on a TPM with a custom storage directory:
+  step-kms-plugin search tpmkms:storage-directory=/tmp/tpmobjects
 
   # Search only attestation keys (AKs) on a TPM:
   step-kms-plugin search tpmkms:ak=true
 
-  # Search only managed keys (non-AKs) on a TPM:
+  # Search only application keys (non-AKs) on a TPM:
   step-kms-plugin search tpmkms:ak=false
 
   # Search TPM keys and output details in JSON format with public keys:
