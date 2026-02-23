@@ -60,7 +60,7 @@ func withTerminal(f func(in, out *os.File) error) error {
 		return f(tty, tty)
 	}
 
-	if term.IsTerminal(int(os.Stdin.Fd())) {
+	if term.IsTerminal(int(os.Stdin.Fd())) { // #nosec G115 -- uintptr comes from file descriptor
 		return f(os.Stdin, os.Stdin)
 	}
 
@@ -73,7 +73,7 @@ func ReadPassword(prompt string) (s []byte, err error) {
 	err = withTerminal(func(in, out *os.File) error {
 		fmt.Fprintf(out, "%s ", prompt)
 		defer clearLine(out)
-		s, err = term.ReadPassword(int(in.Fd()))
+		s, err = term.ReadPassword(int(in.Fd())) // #nosec G115 -- uintptr comes from file descriptor
 		return err
 	})
 	return
@@ -123,11 +123,11 @@ func readCharacter(prompt string, args ...any) (c byte, err error) {
 		fmt.Fprintf(out, prompt, args...)
 		defer clearLine(out)
 
-		oldState, err := term.MakeRaw(int(in.Fd()))
+		oldState, err := term.MakeRaw(int(in.Fd())) // #nosec G115 -- uintptr comes from file descriptor
 		if err != nil {
 			return err
 		}
-		defer term.Restore(int(in.Fd()), oldState)
+		defer term.Restore(int(in.Fd()), oldState) // #nosec G115 -- uintptr comes from file descriptor
 
 		b := make([]byte, 1)
 		if _, err := in.Read(b); err != nil {
