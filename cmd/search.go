@@ -5,10 +5,12 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 	"github.com/spf13/cobra"
+
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/pemutil"
+
+	"github.com/smallstep/step-kms-plugin/internal/flagutil"
 )
 
 var searchCmd = &cobra.Command{

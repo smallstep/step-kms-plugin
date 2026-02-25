@@ -99,7 +99,7 @@ test:
 #########################################
 
 fmt:
-	$Q goimports --local github.com/smallstep/step-kms-plugin  -l -w $(SRC)
+	$Q goimports --local github.com/smallstep/step-kms-plugin --local go.step.sm/crypto -l -w $(SRC)
 
 lint: golint govulncheck
 

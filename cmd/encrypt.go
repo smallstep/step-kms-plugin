@@ -24,6 +24,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
 	"go.step.sm/crypto/kms/apiv1"
 
 	"github.com/smallstep/step-kms-plugin/internal/flagutil"

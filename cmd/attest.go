@@ -31,6 +31,7 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/spf13/cobra"
+
 	"go.step.sm/crypto/kms/apiv1"
 	"go.step.sm/crypto/pemutil"
 
