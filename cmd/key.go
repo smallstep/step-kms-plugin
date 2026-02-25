@@ -18,6 +18,7 @@ import (
 	"io/fs"
 
 	"github.com/spf13/cobra"
+
 	"go.step.sm/crypto/kms"
 
 	"github.com/smallstep/step-kms-plugin/internal/flagutil"
