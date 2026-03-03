@@ -1,11 +1,11 @@
-name: CI
+name: Action CI
 
 on:
   push:
     tags-ignore:
     - 'v*'
     branches:
-    - "master"
+    - "main"
   pull_request:
   workflow_call:
 
@@ -13,19 +13,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
-  ci:
+  actionci:
     permissions:
-      actions: read
       contents: read
       security-events: write
-    uses: smallstep/workflows/.github/workflows/goCI.yml@main
-    with:
-      only-latest-golang: false
-      os-dependencies: "libpcsclite-dev"
-      run-codeql: true
+    uses: smallstep/workflows/.github/workflows/actionci.yml@main
     secrets: inherit
-

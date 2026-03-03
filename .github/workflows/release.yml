@@ -6,6 +6,9 @@ on:
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     uses: smallstep/step-kms-plugin/.github/workflows/ci.yml@main
@@ -14,6 +17,8 @@ jobs:
   create_release:
     name: Create Release
     needs: ci
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     env:
       DOCKER_IMAGE: smallstep/step-kms-plugin
@@ -30,9 +35,11 @@ jobs:
     steps:
       - name: Is Pre-release
         id: is_prerelease
+        env:
+          REF: ${{ github.ref }}
         run: |
           set +e
-          echo ${{ github.ref }} | grep "\-rc.*"
+          echo "${REF}" | grep "\-rc.*"
           OUT=$?
           if [ $OUT -eq 0 ]; then IS_PRERELEASE=true; else IS_PRERELEASE=false; fi
           echo "IS_PRERELEASE=${IS_PRERELEASE}" >> "${GITHUB_OUTPUT}"
@@ -110,7 +117,7 @@ jobs:
       - name: Authenticate to Google Cloud
         if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
         id: gcloud-auth
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           token_format: access_token
           workload_identity_provider: ${{ secrets.GOOGLE_CLOUD_WORKLOAD_IDENTITY_PROVIDER }}
@@ -118,7 +125,7 @@ jobs:
 
       - name: Set up Google Cloud SDK
         if: ${{ needs.create_release.outputs.is_prerelease == 'false' }}
-        uses: google-github-actions/setup-gcloud@v3
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
         with:
           project_id: ${{ secrets.GOOGLE_CLOUD_PACKAGES_PROJECT_ID }}
 
@@ -131,7 +138,7 @@ jobs:
           echo 'IS_PRERELEASE=${{ needs.create_release.outputs.is_prerelease }}' >> "${GITHUB_ENV}"
 
       - name: Run GoReleaser Pro
-        uses: goreleaser/goreleaser-action@v7.0.0
+        uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 # v7.0.0
         with:
           distribution: goreleaser-pro
           version: v2.8.1
