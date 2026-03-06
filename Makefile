@@ -61,12 +61,17 @@ endif
 
 LDFLAGS := -ldflags='-s -w -X "$(PKG)/cmd.Version=$(VERSION)" -X "$(PKG)/cmd.ReleaseDate=$(DATE)"'
 
+GOFIPSVERSION=v1.26.0
+ifeq ($(shell go env GOVERSION | cut -d\. -f-2), go1.25)
+GOFIPSVERSION=v1.0.0
+endif
+
 build:
 	$Q go build -v -o $(PREFIX)bin/$(BINNAME) $(LDFLAGS) $(PKG)
 	@echo "Build Complete!"
 
 build-fips:
-	$Q GOEXPERIMENT="boringcrypto" go build -v -tags fips,noyubikey -o $(PREFIX)bin/$(BINNAME) $(LDFLAGS) $(PKG)
+	$Q GOFIPS140=$(GOFIPSVERSION) go build -v -tags noyubikey -o $(PREFIX)bin/$(BINNAME) $(LDFLAGS) $(PKG)
 	@echo "Build Complete!"
 
 .PHONY: build build-fips
