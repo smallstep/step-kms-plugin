@@ -1,4 +1,4 @@
-// Copyright 2022 Smallstep Labs, Inc.
+// Copyright 2022-2026 Smallstep Labs, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import (
 // certificateCmd represents the certificate command
 var certificateCmd = &cobra.Command{
 	Use:   "certificate <uri>",
-	Short: "print or import a certificate in a KMS",
-	Long:  `This command, if the KMS supports it, prints or imports a certificate in a KMS.`,
+	Short: "print, import, copy, or delete a certificate in a KMS",
+	Long:  `Prints, imports, copies, or deletes a certificate in a KMS.`,
 	Example: `  # Import a certificate to a PKCS #11 module:
   step-kms-plugin certificate --import cert.pem \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
