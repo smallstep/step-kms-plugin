@@ -31,7 +31,9 @@ import (
 var certificateCopyCmd = &cobra.Command{
 	Use:   "copy <src> <dst-uri>",
 	Short: "copy a certificate into a KMS",
-	Long:  `Copies a certificate into a KMS from a PEM file or another KMS URI.`,
+	Long: `Copies a certificate or a certificate chain into a KMS from a PEM file or another
+KMS URI. If the destination KMS does not support certificate chains, only the leaf
+certificate will be stored and printed.`,
 	Example: `  # Copy a certificate from a file into a PKCS #11 module:
   step-kms-plugin certificate copy \
   --kms 'pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm?pin-value=pass' \
@@ -50,22 +52,24 @@ var certificateCopyCmd = &cobra.Command{
 			return showErrUsage(cmd)
 		}
 
-		flags := cmd.Flags()
-		bundle := flagutil.MustBool(flags, "bundle")
-
 		// Load certificates from a file or a source KMS URI.
-		srcArg := args[0]
-		var certs []*x509.Certificate
+		var (
+			certs  []*x509.Certificate
+			srcArg = args[0]
+		)
+
 		if _, typeErr := apiv1.TypeOf(srcArg); typeErr == nil {
 			srcKuri, srcName, err := getURIAndNameForFS("", srcArg)
 			if err != nil {
 				return err
 			}
+
 			srcKM, err := openKMS(cmd.Context(), srcKuri)
 			if err != nil {
 				return fmt.Errorf("failed to load source key manager: %w", err)
 			}
 			defer srcKM.Close()
+
 			switch cm := srcKM.(type) {
 			case apiv1.CertificateChainManager:
 				certs, err = cm.LoadCertificateChain(&apiv1.LoadCertificateChainRequest{
@@ -95,9 +99,8 @@ var certificateCopyCmd = &cobra.Command{
 		if len(certs) == 0 {
 			return fmt.Errorf("no certificates found in %q", srcArg)
 		}
-		cert := certs[0]
 
-		kuri, name, err := getURIAndNameForFS(flagutil.MustString(flags, "kms"), args[1])
+		kuri, name, err := getURIAndNameForFS(flagutil.MustString(cmd.Flags(), "kms"), args[1])
 		if err != nil {
 			return err
 		}
@@ -111,10 +114,13 @@ var certificateCopyCmd = &cobra.Command{
 		// On mackms there's no need to specify a label (name), the keychain
 		// will automatically use the common name by default. But we always need
 		// a label to load the certificate.
-		loadCertificateName := name
+		var (
+			leaf                = certs[0]
+			loadCertificateName = name
+		)
 		if strings.EqualFold(loadCertificateName, "mackms:") {
 			loadCertificateName = uri.New("mackms", url.Values{
-				"label": []string{cert.Subject.CommonName},
+				"label": []string{leaf.Subject.CommonName},
 			}).String()
 		}
 
@@ -132,44 +138,38 @@ var certificateCopyCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			cert = certs[0]
+			leaf = certs[0]
 		case apiv1.CertificateManager:
 			if err := cm.StoreCertificate(&apiv1.StoreCertificateRequest{
 				Name:        name,
-				Certificate: cert,
+				Certificate: leaf,
 			}); err != nil {
 				return err
 			}
-			cert, err = cm.LoadCertificate(&apiv1.LoadCertificateRequest{
+			leaf, err = cm.LoadCertificate(&apiv1.LoadCertificateRequest{
 				Name: loadCertificateName,
 			})
 			if err != nil {
 				return err
 			}
+			if len(certs) > 1 {
+				certs = []*x509.Certificate{leaf}
+			}
 		default:
 			return fmt.Errorf("%q does not implement a CertificateManager or CertificateChainManager", kuri)
 		}
 
-		switch {
-		case bundle:
-			for _, c := range certs {
-				if err := outputCert(c); err != nil {
-					return err
-				}
+		for _, c := range certs {
+			if err := outputCert(c); err != nil {
+				return err
 			}
-			return nil
-		default:
-			return outputCert(cert)
 		}
+
+		return nil
 	},
 }
 
 func init() {
 	certificateCmd.AddCommand(certificateCopyCmd)
 	certificateCopyCmd.SilenceUsage = true
-
-	flags := certificateCopyCmd.Flags()
-	flags.SortFlags = false
-
-	flags.Bool("bundle", false, "Print all certificates in the chain/bundle after copying")
 }

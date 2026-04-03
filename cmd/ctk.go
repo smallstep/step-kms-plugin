@@ -184,28 +184,7 @@ machine-readable output, or --pem to export the certificate in PEM format.`,
 
 		// --json: output a JSON array.
 		if jsonFlag {
-			type jsonEntry struct {
-				Subject   string `json:"subject"`
-				Serial    string `json:"serial"`
-				NotBefore string `json:"not_before"`
-				NotAfter  string `json:"not_after"`
-				Token     string `json:"token"`
-				KeyType   string `json:"key_type"`
-				KeySize   int    `json:"key_size"`
-			}
-			out := make([]jsonEntry, len(entries))
-			for i, e := range entries {
-				out[i] = jsonEntry{
-					Subject:   e.Subject,
-					Serial:    e.Serial,
-					NotBefore: e.NotBefore.UTC().Format(time.RFC3339),
-					NotAfter:  e.NotAfter.UTC().Format(time.RFC3339),
-					Token:     e.Token,
-					KeyType:   e.KeyType,
-					KeySize:   e.KeySize,
-				}
-			}
-			data, err := json.MarshalIndent(out, "", "  ")
+			data, err := json.MarshalIndent(entries, "", "  ")
 			if err != nil {
 				return err
 			}
