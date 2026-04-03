@@ -138,7 +138,6 @@ certificate will be stored and printed.`,
 			if err != nil {
 				return err
 			}
-			leaf = certs[0]
 		case apiv1.CertificateManager:
 			if err := cm.StoreCertificate(&apiv1.StoreCertificateRequest{
 				Name:        name,
