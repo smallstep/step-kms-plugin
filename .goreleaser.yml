@@ -9,6 +9,7 @@ version: 2
 variables:
   packageName: step-kms-plugin
   packageRelease: 1 # Manually update release: in the nfpm section to match this value if you change this
+  macosTarget: 14.0.0
 
 after:
   hooks:
@@ -57,7 +58,9 @@ builds:
     env:
       - CC=o64-clang
       - CXX=o64-clang++
-      - LD_LIBRARY_PATH=/osxcross/lib
+      - LD_LIBRARY_PATH=/usr/local/osxcross/lib
+      - CGO_CFLAGS="-mmacosx-version-min={{ .Var.macosTarget }}"
+      - CGO_LDFLAGS="-mmacosx-version-min={{ .Var.macosTarget }}"
     flags:
       - -trimpath
     ldflags:
@@ -72,7 +75,9 @@ builds:
     env:
       - CC=oa64-clang
       - CXX=oa64-clang++
-      - LD_LIBRARY_PATH=/osxcross/lib
+      - LD_LIBRARY_PATH=/usr/local/osxcross/lib
+      - CGO_CFLAGS="-mmacosx-version-min={{ .Var.macosTarget }}"
+      - CGO_LDFLAGS="-mmacosx-version-min={{ .Var.macosTarget }}"
     flags:
       - -trimpath
     ldflags:
