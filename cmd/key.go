@@ -1,4 +1,4 @@
-// Copyright 2022 Smallstep Labs, Inc.
+// Copyright 2022-2026 Smallstep Labs, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import (
 // keyCmd represents the key command
 var keyCmd = &cobra.Command{
 	Use:   "key <uri>",
-	Short: "print the public key in a KMS",
-	Long:  `Prints a public key stored in a KMS.`,
+	Short: "print or delete a public key in a KMS",
+	Long:  `Prints or deletes a public key stored in a KMS.`,
 	Example: `  # Get the public key defining the kms uri and key together:
   step-kms-plugin key \
   "pkcs11:module-path=/path/to/libsofthsm2.so;token=softhsm;id=1000?pin-value=pass"
