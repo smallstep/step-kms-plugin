@@ -8,7 +8,7 @@ It can be used independently, or as a plugin for [`step`](https://github.com/sma
 
 ## Installation
 
-There's two installation options:
+There are two installation options:
 
 - The most generic way to install `step-kms-plugin` is to use `go install` to
 compile it and install it in your `$GOBIN`, which defaults to `$(go env GOPATH)/bin`.
@@ -27,13 +27,15 @@ add it to your `$PATH` or to `$(step path --base)/plugins`.
 The following Key Management Systems (KMSs) are supported, but not all of
 them provide the full functionality:
 
-* PKCS #11 modules
-* [TPM 2.0](https://trustedcomputinggroup.org/resource/tpm-library-specification/)
-* [Amazon AWS KMS](https://aws.amazon.com/kms/)
-* [Google Cloud Key Management](https://cloud.google.com/security-key-management)
-* [Microsoft Azure Key Vault](https://azure.microsoft.com/en-us/services/key-vault/)
-* [YubiKey PIV](https://developers.yubico.com/PIV/)
-* ssh-agent
+* PKCS #11 modules (`pkcs11:`)
+* Platform KMS using TPM KMS on linux and windows and keychain and Secure Enclave on macOS (`kms:`)
+* [TPM 2.0](https://trustedcomputinggroup.org/resource/tpm-library-specification/) (`tpmkms:`)
+* [Amazon AWS KMS](https://aws.amazon.com/kms/) (`awskms:`)
+* [Google Cloud Key Management](https://cloud.google.com/security-key-management) (`cloudkms:`)
+* [Microsoft Azure Key Vault](https://azure.microsoft.com/en-us/services/key-vault/) (`azurekms:`)
+* [YubiKey PIV](https://developers.yubico.com/PIV/) (`yubikey:`)
+* macOS keychain and Secure Enclave on signed binaries (`mackms:`).
+* ssh-agent (`sshagentkms:`)
 
 ## Setting up `step-ca`?
 
@@ -375,7 +377,7 @@ but the private key is not exportable from the YubiKey.
 First, create a private key on the YubiKey in slot 9a, and output a CSR:
 
 ```
-$ step certificate create --csr --kms 'yubikey:pin-value=123456' --key 'yubikey:slot-id=9a' mariano@smallstep.com mariano.csr
+$ step certificate create --csr -key 'yubikey:slot-id=9a?pin-value=123456' mariano@smallstep.com mariano.csr
 Your certificate signing request has been saved in mariano.csr.
 ```
 
@@ -395,12 +397,11 @@ https://accounts.google.com/o/oauth2/v2/auth?...
 Finally, import the new certificate into the YubiKey:
 
 ```
-$ step kms certificate --import mariano.crt --kms 'yubikey:' 'yubikey:slot-id=9a'
+$ step kms certificate copy mariano.crt 'yubikey:slot-id=9a'
 -----BEGIN CERTIFICATE-----
 MIICQjCCAeigAwIBAgIRANfNWEXAMPLE3zJ+jRZ4TbUwCgYIKoZIzj0EAwIwKTEn
 ...
 -----END CERTIFICATE-----
-
 ```
 
 Note: To use this client certificate against a server, the server needs to trust the intermediate CA rather than the root CA. That's because YubiKeys only support one certificate per key slot (in this case, the client certificate). On your server, you can either trust the intermediate by itself, or a PEM bundle consisting of the intermediate CA first, then the root CA.
