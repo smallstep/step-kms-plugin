@@ -16,5 +16,5 @@ permissions:
 
 jobs:
   triage:
-    uses: smallstep/workflows/.github/workflows/triage.yml@main
+    uses: smallstep/workflows/.github/workflows/triage.yml@0b9040c4480f954b861c73da7937260da619fee5
     secrets: inherit
