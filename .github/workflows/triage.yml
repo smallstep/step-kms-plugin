@@ -18,3 +18,19 @@ jobs:
   triage:
     uses: smallstep/workflows/.github/workflows/triage.yml@main
     secrets: inherit
+    with:
+      run-label-pr: false
+    permissions:
+      issues: write
+  label-pr:
+    name: Label PR
+    if: github.event_name == 'pull_request_target'
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+    - name: Label PR
+      run: | # plain GitHub API call replaces "gh pr edit"
+        gh api --method POST repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels --field 'labels[]=needs triage'
