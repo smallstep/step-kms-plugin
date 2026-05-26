@@ -18,5 +18,6 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      actions: read
     uses: smallstep/workflows/.github/workflows/actionci.yml@main
     secrets: inherit
