@@ -7,7 +7,7 @@ require (
 	github.com/smallstep/cli-utils v0.12.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
-	go.step.sm/crypto v0.87.1-0.20260805020637-15fe069c3194
+	go.step.sm/crypto v0.87.1-0.20260805182418-a31136cd3809
 	golang.org/x/crypto v0.54.0
 	golang.org/x/term v0.45.0
 )
