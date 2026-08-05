@@ -301,7 +301,7 @@ func getSignerOptions(km kms.KeyManager, pub crypto.PublicKey, alg string, pss b
 		}
 		return getSignerOptions(km, pk, alg, pss, saltLength)
 	default:
-		return nil, fmt.Errorf("unsupported public key type %T", pub)
+		return getSignerOptionsDefault(pub)
 	}
 }
 
@@ -330,7 +330,7 @@ func verifySignature(signer crypto.Signer, data, sig []byte, so crypto.SignerOpt
 			Blob:   sig,
 		}) == nil
 	default:
-		return false
+		return verifySignatureDefault(signer, data, sig, so)
 	}
 }
 

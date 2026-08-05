@@ -306,6 +306,12 @@ func getSignatureAlgorithm(kty, crv, alg string, pss bool) apiv1.SignatureAlgori
 		return rsaSignatureAlgorithmMapping[rsaParams{alg, pss}]
 	case "OKP":
 		return okpSignatureAlgorithmMapping[okpParams{crv}]
+	case "ML-DSA-44", "MLDSA44":
+		return apiv1.MLDSA44
+	case "ML-DSA-65", "MLDSA65":
+		return apiv1.MLDSA65
+	case "ML-DSA-87", "MLDSA87":
+		return apiv1.MLDSA87
 	default:
 		return ecSignatureAlgorithmMapping[ecParams{crv}]
 	}
@@ -329,7 +335,7 @@ func init() {
 	flags := createCmd.Flags()
 	flags.SortFlags = false
 
-	kty := flagutil.UpperValue("kty", []string{"EC", "RSA", "OKP"}, "EC")
+	kty := flagutil.UpperValue("kty", []string{"EC", "RSA", "OKP", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87"}, "EC")
 	crv := flagutil.NormalizedValue("crv", []string{"P256", "P384", "P521", "Ed25519"}, "P256")
 	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
 	format := flagutil.NormalizedValue("format", []string{"PKIX", "PKCS1", "TSS2"}, "PKIX")
