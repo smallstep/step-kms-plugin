@@ -284,6 +284,17 @@ var okpSignatureAlgorithmMapping = map[okpParams]apiv1.SignatureAlgorithm{
 	{"ED25519"}: apiv1.PureEd25519,
 }
 
+type akpParams struct {
+	alg string
+}
+
+var akpSignatureAlgorithmMapping = map[akpParams]apiv1.SignatureAlgorithm{
+	{""}:          apiv1.MLDSA65,
+	{"ML-DSA-44"}: apiv1.MLDSA44,
+	{"ML-DSA-65"}: apiv1.MLDSA65,
+	{"ML-DSA-87"}: apiv1.MLDSA87,
+}
+
 var pinPolicyMapping = map[string]apiv1.PINPolicy{
 	"":       0, // Use default on YubiKey kms (always)
 	"NEVER":  apiv1.PINPolicyNever,
@@ -306,12 +317,8 @@ func getSignatureAlgorithm(kty, crv, alg string, pss bool) apiv1.SignatureAlgori
 		return rsaSignatureAlgorithmMapping[rsaParams{alg, pss}]
 	case "OKP":
 		return okpSignatureAlgorithmMapping[okpParams{crv}]
-	case "ML-DSA-44", "MLDSA44":
-		return apiv1.MLDSA44
-	case "ML-DSA-65", "MLDSA65":
-		return apiv1.MLDSA65
-	case "ML-DSA-87", "MLDSA87":
-		return apiv1.MLDSA87
+	case "AKP":
+		return akpSignatureAlgorithmMapping[akpParams{crv}]
 	default:
 		return ecSignatureAlgorithmMapping[ecParams{crv}]
 	}
@@ -335,18 +342,21 @@ func init() {
 	flags := createCmd.Flags()
 	flags.SortFlags = false
 
-	kty := flagutil.UpperValue("kty", []string{"EC", "RSA", "OKP", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87"}, "EC")
+	kty := flagutil.UpperValue("kty", []string{"EC", "RSA", "OKP", "AKP"}, "EC")
 	crv := flagutil.NormalizedValue("crv", []string{"P256", "P384", "P521", "Ed25519"}, "P256")
-	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512"}, "SHA256")
+	alg := flagutil.NormalizedValue("alg", []string{"SHA256", "SHA384", "SHA512", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87"}, "SHA256")
 	format := flagutil.NormalizedValue("format", []string{"PKIX", "PKCS1", "TSS2"}, "PKIX")
 	protectionLevel := flagutil.UpperValue("protection-level", []string{"SOFTWARE", "HSM"}, "SOFTWARE")
 	pinPolicy := flagutil.UpperValue("pin-policy", []string{"NEVER", "ALWAYS", "ONCE"}, "")
 	touchPolicy := flagutil.UpperValue("touch-policy", []string{"NEVER", "ALWAYS", "CACHED"}, "")
 
-	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC, RSA or OKP")
+	flags.Var(kty, "kty", "The key `type` to build the certificate upon.\nOptions are EC, RSA, OKP or AKP")
 	flags.Var(crv, "crv", "The elliptic `curve` to use for EC and OKP key types.\nOptions are P256, P384, P521 or Ed25519 on OKP")
 	flags.Int("size", 3072, "The key size for an RSA key")
-	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures.\nOptions are SHA256, SHA384 or SHA512")
+	flags.Var(alg, "alg", "The hashing `algorithm` to use on RSA PKCS #1 and RSA-PSS signatures\n"+
+		`or the algorithm used on ML-DSA keys. Options are:
+ * SHA256, SHA384 or SHA512 for RSA keys.
+ * ML-DSA-44, ML-DSA-65 or ML-DSA-87 for ML-DSA keys.`)
 	flags.Var(protectionLevel, "protection-level", "The protection `level` used on some Cloud KMSs.\nOptions are SOFTWARE or HSM")
 	flags.Var(pinPolicy, "pin-policy", "The pin `policy` used on YubiKey KMS.\nOptions are NEVER, ALWAYS or ONCE")
 	flags.Var(touchPolicy, "touch-policy", "The touch `policy` used on YubiKey KMS.\nOptions are NEVER, ALWAYS or CACHED")
