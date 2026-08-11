@@ -289,7 +289,7 @@ type akpParams struct {
 }
 
 var akpSignatureAlgorithmMapping = map[akpParams]apiv1.SignatureAlgorithm{
-	{""}:          apiv1.MLDSA65,
+	{""}:          apiv1.MLDSA44,
 	{"ML-DSA-44"}: apiv1.MLDSA44,
 	{"ML-DSA-65"}: apiv1.MLDSA65,
 	{"ML-DSA-87"}: apiv1.MLDSA87,
