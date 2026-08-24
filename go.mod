@@ -7,7 +7,7 @@ require (
 	github.com/smallstep/cli-utils v0.12.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
-	go.step.sm/crypto v0.88.0
+	go.step.sm/crypto v0.89.0
 	golang.org/x/crypto v0.55.0
 	golang.org/x/term v0.45.0
 )
@@ -78,7 +78,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/schollz/jsonstore v1.1.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/smallstep/go-attestation v0.4.4-0.20260603212853-e1a87a0b07d9 // indirect
+	github.com/smallstep/go-attestation v0.4.4-0.20260814222900-a849f4e2cd68 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/thales-e-security/pool v0.0.2 // indirect
 	github.com/urfave/cli v1.22.17 // indirect
