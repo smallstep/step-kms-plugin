@@ -150,7 +150,7 @@ Cloud KMS.`,
 				return err
 			}
 		} else {
-			if b, err = rsa.EncryptPKCS1v15(rand.Reader, pub, data); err != nil {
+			if b, err = rsa.EncryptPKCS1v15(rand.Reader, pub, data); err != nil { //nolint:staticcheck // support legacy use case
 				return err
 			}
 		}
