@@ -12,6 +12,7 @@ FROM smallstep/step-cli:latest
 COPY --from=builder /src/bin/step-kms-plugin /usr/local/bin/step-kms-plugin
 
 USER root
+RUN apk upgrade --no-cache
 RUN apk add --no-cache pcsc-lite pcsc-lite-libs
 USER step
 

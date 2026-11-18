@@ -8,6 +8,9 @@ RUN make V=1 CGO_ENABLED=0 build
 
 FROM smallstep/step-cli:latest
 
+USER root
+RUN apk upgrade --no-cache
+
 COPY --from=builder /src/bin/step-kms-plugin /usr/local/bin/step-kms-plugin
 
 USER step
